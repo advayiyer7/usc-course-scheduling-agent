@@ -27,11 +27,13 @@ export class UscClient {
           redirect: "error",
           headers: { Accept: "application/json" },
         });
-        if ([401, 403].includes(res.status))
+        if ([401, 403].includes(res.status)) {
+          await this.store.pauseSource(Date.now() + 3600000);
           throw new AppError(
             "SOURCE_ACCESS_DENIED",
-            "USC denied public access. Refresh stopped.",
+            "USC denied public access. Refreshes paused for one hour.",
           );
+        }
         if (!res.ok) {
           if (res.status === 429 || res.status >= 500) {
             const retry = res.headers.get("retry-after");
@@ -40,6 +42,8 @@ export class UscClient {
                 ? Number(retry) * 1000
                 : Math.max(0, Date.parse(retry) - Date.now())
               : 0;
+            if (ms > 0 && Number.isFinite(ms))
+              await this.store.pauseSource(Date.now() + ms);
             if (ms > 60000)
               throw new AppError(
                 "SOURCE_UNAVAILABLE",

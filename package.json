@@ -18,7 +18,9 @@
     "mcp:stdio": "node --env-file-if-exists=.env --import=tsx apps/api/src/stdio.ts",
     "check": "npm run typecheck && npm test && npm run build",
     "smoke": "node --env-file-if-exists=.env --import=tsx scripts/smoke.ts",
-    "format": "prettier --write \"{apps,packages,scripts,tests}/**/*.{ts,tsx,css,json}\""
+    "format": "prettier --write \"{apps,packages,scripts,tests}/**/*.{ts,tsx,css,json}\"",
+    "benchmark": "node --env-file-if-exists=.env --import=tsx scripts/benchmark.ts",
+    "smoke:stdio": "node --env-file-if-exists=.env --import=tsx scripts/smoke-stdio.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",

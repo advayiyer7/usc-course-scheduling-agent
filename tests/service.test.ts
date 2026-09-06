@@ -1,5 +1,6 @@
+import { testStore } from "./database.js";
 import { it, expect, beforeAll, afterAll } from "vitest";
-import { Store, migrate, openDatabase } from "../packages/db/src/index.js";
+import { Store } from "../packages/db/src/index.js";
 import { CourseService } from "../packages/domain/src/service.js";
 import { createApp } from "../apps/api/src/http.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -12,9 +13,7 @@ let store: Store,
   base: string,
   version: string;
 beforeAll(async () => {
-  const db = await openDatabase();
-  await migrate(db);
-  store = new Store(db);
+  store = await testStore();
   version = (
     await store.publish(20263, programs, [
       response([

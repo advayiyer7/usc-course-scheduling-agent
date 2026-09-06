@@ -60,3 +60,13 @@ npm run smoke
 `smoke` requires the backend and an imported Fall 2026 semester. The UI supports search, course selection, section selection, hard time limits, unavailable blocks, soft free-day preferences, deterministic validation, local persistence, JSON export and refresh requests. The prototype does not generate optimal schedules automatically; the connected assistant proposes combinations and the validator checks them.
 
 All schedules remain indeterminate for complete registration validity until required component/linking rules and date ranges are verified. Known conflicts are still reported. Full sections and personal eligibility are separate from time compatibility.
+
+## Reliability and benchmark commands
+
+`npm run benchmark` launches its own loopback server against the stored Fall 2026 data, performs 500 requests at concurrency 20, and reports measured latency, cache loads and upstream-budget changes. Stop the development API first if using embedded storage. It deliberately raises the local request quota only for that benchmark instance.
+
+`npm run smoke:stdio` starts an actual stdio child process and tests tool discovery plus a course lookup. Stop other embedded-database processes first. These protocol checks do not substitute for testing provider-specific connector onboarding.
+
+CI runs fixture-backed tests against both PGlite and a dedicated PostgreSQL `usc_test` database. To repeat PostgreSQL tests locally, set `TEST_DATABASE_URL` to that dedicated test database; tests use isolated temporary schemas and remove only those schemas.
+
+The current cache holds two immutable dataset versions in one process. Cursors are signed with a process-local key, so restart or a future different replica requires restarting pagination. Replica-shared cursors and distributed client quotas must be designed before horizontal deployment.

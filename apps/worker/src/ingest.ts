@@ -83,17 +83,19 @@ export async function runOneJob(store: Store, source: UscClient) {
         owner,
       );
       await store.db.query(
-        `UPDATE jobs SET status='complete',updated_at=$1 WHERE id=$2`,
-        [new Date().toISOString(), job.id],
+        `UPDATE jobs SET status='complete',updated_at=$1 WHERE id=$2 AND EXISTS (SELECT 1 FROM worker_lease WHERE id=1 AND owner=$3 AND expires_at>$4)`,
+        [new Date().toISOString(), job.id, owner, Date.now()],
       );
       return job;
     } catch (e) {
       await store.db.query(
-        `UPDATE jobs SET status='failed',error=$1,updated_at=$2 WHERE id=$3`,
+        `UPDATE jobs SET status='failed',error=$1,updated_at=$2 WHERE id=$3 AND EXISTS (SELECT 1 FROM worker_lease WHERE id=1 AND owner=$4 AND expires_at>$5)`,
         [
           e instanceof Error ? e.message : "Refresh failed",
           new Date().toISOString(),
           job.id,
+          owner,
+          Date.now(),
         ],
       );
       throw e;

@@ -26,3 +26,11 @@
 - Browser verified against the real imported Fall 2026 dataset: search CSCI104; select lecture 29903, lab 30119 and quiz 30025; display meetings; validate; reload and restore selections; set 18:00 latest finish and observe the quiz time-window violation.
 - Browser testing caught and fixed time-input event handling before release. Preferences are not overwritten when the initial backend connection fails.
 - Extension bundles build successfully. The React UI was exercised in the browser preview; installation into a user's Chrome profile and store publication were not performed.
+
+## Milestone 4: reliability and measured local load
+
+- Source Retry-After now pauses the shared budget across callers; access denials pause source requests for one hour. An expired worker cannot publish or overwrite another worker's job completion.
+- Added dedicated PostgreSQL test schemas and a GitHub Actions job running on Node.js 24 against both PGlite and PostgreSQL 18.3. Hosted test results are tracked separately below.
+- Restricted test discovery to source tests to avoid counting compiled copies twice.
+- Local REST benchmark on the imported 4,637-course / 9,537-section dataset: 500 requests, concurrency 20, zero failures, 0.42 seconds, 1,198 requests/second observed, p50 12 ms, p95 58 ms. One dataset load and 499 cache hits; the upstream budget did not change. Local request limits were raised only in the benchmark instance. This is not an internet-facing production capacity claim.
+- Both Streamable HTTP and actual child-process stdio were smoke-tested with the official MCP client against the historical dataset. No provider application has been onboarded.

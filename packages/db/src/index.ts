@@ -1,3 +1,4 @@
+import { AppError } from "../../contracts/src/index.js";
 import { mkdir } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import pg from "pg";
@@ -326,11 +327,23 @@ export class Store {
     });
     return snap;
   }
+  async pauseSource(until: number) {
+    await this.db.query(
+      "UPDATE upstream_budget SET next_at=GREATEST(next_at,$1) WHERE id=1",
+      [until],
+    );
+  }
   async permit(interval: number) {
     return this.db.transaction(async (tx) => {
       const [r] = await tx.query<{ next_at: string }>(
         "SELECT next_at FROM upstream_budget WHERE id=1 FOR UPDATE",
       );
+      if (Number(r!.next_at) - Date.now() > 60000)
+        throw new AppError(
+          "SOURCE_UNAVAILABLE",
+          "Upstream is paused; retry after the shared cooldown.",
+          Math.ceil((Number(r!.next_at) - Date.now()) / 1000),
+        );
       const at = Math.max(Date.now(), Number(r!.next_at));
       await tx.query("UPDATE upstream_budget SET next_at=$1 WHERE id=1", [
         at + interval,
