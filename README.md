@@ -20,7 +20,9 @@ The runtime prompt describes how a scheduling assistant should behave. The imple
 
 ## Product scope
 
-Students choose courses and preferences, chat with their own Codex runtime inside the extension, inspect section alternatives, and validate proposed schedules. The companion can display up to three AI-generated draft cards; students choose whether to load a draft into their calendar. The backend supplies source-backed public data and deterministic validation. Deterministic schedule optimization remains a later phase.
+The primary workflow starts in extension chat: a student types a request such as “Fall 2026: CSCI 104, CSCI 270, EE 109, and one GE-D course.” The assistant finds the courses and section combinations and presents two or three schedule alternatives when enough suitable options exist. Manual course/section selection is optional editing, never a prerequisite for chatting. The intended next action is **Add to coursebin** on the chosen schedule: the extension operates in the student's logged-in WebReg session and reports the outcome, with checkout left to the student.
+
+The current companion accepts typed course requests and can display up to three AI-generated draft cards, with **Load into planner** as its implemented action. Signed-in inference still needs end-to-end verification. Source-backed GE-category discovery and WebReg coursebin interaction are not implemented. The backend supplies public data and deterministic validation; deterministic schedule optimization remains a later phase. See the [chat-to-coursebin acceptance workflow](docs/implementation-plan.md#chat-to-coursebin-acceptance-workflow) for the target behavior and remaining work.
 
 The Chrome extension displays chat, preferences, saved course selections, and a weekly calendar. The local pilot calls the backend over loopback HTTP; a production deployment would require HTTPS and authentication. Native messaging connects only this extension to its locally installed companion. It does not automatically grant tools to arbitrary AI chat websites.
 

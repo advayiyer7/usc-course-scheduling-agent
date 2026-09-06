@@ -43,3 +43,15 @@ Build a local companion using official Codex app-server, with student-managed Ch
 - In-extension chat using provider APIs, including explicit key and billing design.
 - Professor information beyond names only with appropriate sources and provenance.
 - Campus travel constraints only with reliable locations and travel-time inputs.
+
+## Chat-to-coursebin acceptance workflow
+
+The user clarified the primary product flow on September 6, 2026. Manual planner selection is an optional editor, not required onboarding. The acceptance scenario is an empty planner followed by “I want CSCI 104, CSCI 270, EE 109, and a GE-D course for Fall 2026.”
+
+1. The assistant resolves named courses and interprets GE-D as one requirement slot with alternative eligible courses, not a literal course code or a request to take every matching course. GE membership requires authoritative source evidence; never infer it from a title or department.
+2. It retrieves the relevant sections, accounts for required components and stated preferences, and presents two or three validated alternatives in chat when available. If fewer exist or facts are unresolved, explain that rather than inventing alternatives or relaxing hard constraints silently.
+3. Each eventual coursebin action is attached to a specific reviewed schedule. The student clicks **Add to coursebin** directly from that schedule; loading it into the manual editor must not be a prerequisite.
+4. A bounded extension adapter uses the student's existing logged-in WebReg session to add the exact approved sections. Inspect actual WebReg behavior before implementing mutations. Verify the semester and current bin, preserve unrelated contents, avoid duplicate additions, and report confirmed successes and partial failures. Full/unavailable sections return to chat for alternatives; do not silently substitute or automatically register.
+5. The student reviews the bin and completes checkout in WebReg. AI inference uses the student's own companion account; coursebin execution is application code and requires no project-funded model call.
+
+Remaining dependencies are authenticated chat verification, source-backed GE-category discovery, verified component semantics, and the WebReg adapter/action UI. The current **Load into planner** button is implemented; **Add to coursebin** is not. This acceptance target does not claim those dependencies are complete or authorize changes to a real student's bin without their selection of a specific schedule.
