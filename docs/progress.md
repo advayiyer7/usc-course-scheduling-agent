@@ -34,3 +34,13 @@
 - Restricted test discovery to source tests to avoid counting compiled copies twice.
 - Local REST benchmark on the imported 4,637-course / 9,537-section dataset: 500 requests, concurrency 20, zero failures, 0.42 seconds, 1,198 requests/second observed, p50 12 ms, p95 58 ms. One dataset load and 499 cache hits; the upstream budget did not change. Local request limits were raised only in the benchmark instance. This is not an internet-facing production capacity claim.
 - Both Streamable HTTP and actual child-process stdio were smoke-tested with the official MCP client against the historical dataset. No provider application has been onboarded.
+
+Hosted verification completed successfully: [GitHub Actions run 34061412965](https://github.com/advayiyer7/usc-course-scheduling-agent/actions/runs/34061412965) passed installation, type checking, extension build, 23 PGlite-backed tests and the same 23 tests against PostgreSQL 18.3 on Node.js 24.
+
+## Remaining release boundaries
+
+- Local prototype only: no public deployment, OAuth onboarding or extension-store release.
+- Required component/linking rules and actual meeting dates remain unknown; the validator reports this and does not certify a complete schedule.
+- Assistant applications have not been configured; tested integrations are official MCP clients over HTTP and stdio.
+- Full-semester timed refresh scheduling and snapshot retention are operational follow-ups; user-requested refresh jobs work now.
+- PGlite is single-process development storage. Use PostgreSQL for simultaneous HTTP, worker and stdio processes.
