@@ -10,7 +10,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "tsc && vite build --config apps/extension/vite.config.ts",
+    "build": "tsc && vite build --config apps/extension/vite.config.ts && vite build --config apps/extension/vite.content.config.ts",
     "dev": "node --env-file-if-exists=.env --import=tsx apps/api/src/main.ts",
     "worker": "node --env-file-if-exists=.env --import=tsx apps/worker/src/main.ts",
     "ingest": "node --env-file-if-exists=.env --import=tsx scripts/ingest.ts",
@@ -42,6 +42,7 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
+    "linkedom": "0.18.13",
     "prettier": "3.9.6",
     "tsx": "4.23.13",
     "typescript": "7.0.2",

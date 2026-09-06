@@ -37,6 +37,7 @@ it("accepts only our extension page, relays validated actions and terminates the
       id: EXTENSION_ORIGIN.split("://")[1],
       getURL: (path: string) => `${EXTENSION_ORIGIN}/${path}`,
       onConnect: connection,
+      onMessage: { addListener: vi.fn() },
       connectNative,
     },
   });

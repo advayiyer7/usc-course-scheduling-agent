@@ -7,7 +7,21 @@
   "permissions": ["storage", "sidePanel", "nativeMessaging"],
   "minimum_chrome_version": "116",
   "side_panel": { "default_path": "index.html" },
-  "host_permissions": ["http://127.0.0.1:3000/*"],
+  "host_permissions": ["http://127.0.0.1:3000/*", "https://webreg.usc.edu/*"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://webreg.usc.edu/CourseBin*",
+        "https://webreg.usc.edu/Courses*",
+        "https://webreg.usc.edu/Departments*",
+        "https://webreg.usc.edu/Search*",
+        "https://webreg.usc.edu/Calendar*"
+      ],
+      "js": ["coursebin.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
   "action": {
     "default_title": "Open USC Course Planner"
   },

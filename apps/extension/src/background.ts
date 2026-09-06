@@ -4,6 +4,9 @@ import {
   NATIVE_HOST,
   trustedLoginUrl,
 } from "../../../packages/contracts/src/companion.js";
+import { installCoursebinHandler } from "./coursebin/background.js";
+
+installCoursebinHandler();
 
 void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 let current: chrome.runtime.Port | undefined;
