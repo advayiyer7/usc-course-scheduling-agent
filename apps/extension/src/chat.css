@@ -209,7 +209,7 @@
   padding: 16px;
   background: white;
 }
-.proposal-card > div {
+.proposal-card > div:first-child {
   display: flex;
   justify-content: space-between;
   align-items: center;

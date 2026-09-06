@@ -14,9 +14,9 @@ const descriptions: Record<ToolName, string> = {
   search_courses:
     "Search course codes and titles in a stored semester. Returns up to 50 summaries. Follow cursors with the same query.",
   get_courses:
-    "Retrieve up to 20 courses, aliases, units, prerequisites and restrictions. Null means unknown, not unrestricted.",
+    "Retrieve up to 20 courses, aliases, units, prerequisites, restrictions and official D-clearance guidance with audience and review dates. Guidance is not approval. Null means unknown, not unrestricted.",
   get_sections:
-    "Retrieve paginated section components, times, instructor names and timestamped seat counts for up to 20 courses. Locations and meeting dates are not verified. Follow all pages before assuming completeness.",
+    "Retrieve paginated section components, times, instructor names, timestamped seats and clearance requirements/instruction links for up to 20 courses. Approval, locations and meeting dates are not verified. Follow all pages before assuming completeness.",
   validate_schedule:
     "Check exact selected section IDs against hard time constraints, known overlaps, cancellations and course coverage. Reports indeterminate when dates or required component rules are unknown. Never establishes personal enrollment eligibility.",
   request_refresh:

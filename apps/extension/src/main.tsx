@@ -3,11 +3,18 @@ import { createRoot } from "react-dom/client";
 import { z } from "zod";
 import {
   constraints as constraintsSchema,
+  inputs,
   type Course,
   type Section,
 } from "../../../packages/contracts/src/index.js";
 import { readPreferences, savePreferences } from "./storage.js";
 import { ChatPanel } from "./ChatPanel.js";
+import { ScheduleReview } from "./ScheduleReview.js";
+import { observeValidation, type ReviewState } from "./validation-request.js";
+import {
+  validationReview,
+  type ValidationReview,
+} from "../../../packages/contracts/src/review.js";
 import {
   protectConstraints,
   type Proposal,
@@ -25,12 +32,18 @@ interface Envelope<T> {
   data: T;
   meta: Meta;
 }
-async function tool<T>(name: string, args: unknown): Promise<Envelope<T>> {
+async function tool<T>(
+  name: string,
+  args: unknown,
+  signal?: AbortSignal,
+): Promise<Envelope<T>> {
   const r = await fetch(`${API}/api/tools/${name}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(args),
-    signal: AbortSignal.timeout(15000),
+    signal: signal
+      ? AbortSignal.any([signal, AbortSignal.timeout(15000)])
+      : AbortSignal.timeout(15000),
   });
   const value = await r.json();
   if (value.error) throw new Error(value.error.message);
@@ -45,12 +58,7 @@ const savedSchema = z.object({
   version: z.string().uuid().optional(),
 });
 type Constraints = z.infer<typeof constraintsSchema>;
-interface Validation {
-  status: string;
-  units: number | null;
-  checks: { code: string; status: string; message: string }[];
-  eligibility: { status: string };
-}
+type Validation = ValidationReview;
 const minute = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 const labelTime = (t: string) => {
   const h = Number(t.slice(0, 2));
@@ -76,11 +84,28 @@ function App() {
     preferences: { instructors: [], free_days: [] },
   });
   const [meta, setMeta] = useState<Meta>(),
-    [validation, setValidation] = useState<Validation>(),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [ready, setReady] = useState(false);
+  const [review, setReview] = useState<{
+    key: string;
+    state: ReviewState<Envelope<Validation>>;
+  }>();
+  const [validationAttempt, setValidationAttempt] = useState(0);
+  const validationInput = JSON.stringify({
+    term_code: term,
+    snapshot_version: version,
+    requested_courses: courses.map((c) => c.code),
+    section_ids: ids,
+    constraints,
+  });
+  const validationKey = `${validationAttempt}:${validationInput}`;
+  // Never render a previous selection's result, including the render before effect cleanup.
+  const reviewState =
+    !busy && review?.key === validationKey ? review.state : undefined;
+  const validation =
+    reviewState?.status === "ready" ? reviewState.value.data : undefined;
   const [blockDay, setBlockDay] = useState("Mon"),
     [blockStart, setBlockStart] = useState("09:00"),
     [blockEnd, setBlockEnd] = useState("10:00");
@@ -145,6 +170,7 @@ function App() {
         section_ids: s.section_ids,
         constraints: s.constraints,
       });
+      validationReview.parse(checked.data);
       if (checked.data.status === "infeasible")
         throw new Error(
           "This draft has conflicts. Ask the assistant to revise it.",
@@ -170,7 +196,6 @@ function App() {
       setIds(s.section_ids);
       setConstraints(s.constraints);
       setMeta(checked.meta);
-      setValidation(checked.data);
       setResults([]);
       setError("");
       setNotice(
@@ -244,6 +269,53 @@ function App() {
       version,
     }).catch(() => setError("Preferences could not be saved locally."));
   }, [ready, term, courses, ids, constraints, version]);
+  useEffect(() => {
+    if (!ready || busy || !courses.length || !ids.length || !version) {
+      setReview(undefined);
+      return;
+    }
+    const parsed = inputs.validate_schedule.safeParse(
+      JSON.parse(validationInput),
+    );
+    if (!parsed.success) {
+      setReview({
+        key: validationKey,
+        state: {
+          status: "error",
+          message: "Fix the schedule preferences before validation can run.",
+        },
+      });
+      return;
+    }
+    return observeValidation(
+      async (signal) => {
+        const result = await tool<unknown>(
+          "validate_schedule",
+          parsed.data,
+          signal,
+        );
+        const data = validationReview.safeParse(result.data);
+        if (!data.success)
+          throw new Error(
+            "Detailed validation is unavailable. Update the local service and try again.",
+          );
+        if (result.meta.snapshot_version !== parsed.data.snapshot_version)
+          throw new Error(
+            "Validation used a different snapshot. Load the latest course data and try again.",
+          );
+        return { ...result, data: data.data };
+      },
+      (state) => setReview({ key: validationKey, state }),
+    );
+  }, [
+    ready,
+    busy,
+    validationInput,
+    validationKey,
+    courses.length,
+    ids.length,
+    version,
+  ]);
   const selected = sections.filter((s) => ids.includes(s.id));
   async function act(fn: () => Promise<void>) {
     if (busy) return;
@@ -293,7 +365,6 @@ function App() {
       setSections(d.sections);
       setMeta(d.meta);
       setVersion(d.meta?.snapshot_version);
-      setValidation(undefined);
       setResults([]);
       setQuery("");
     });
@@ -308,35 +379,19 @@ function App() {
         (id) => sections.find((s) => s.id === id)?.course_key !== code,
       ),
     );
-    setValidation(undefined);
   }
   function choose(id: string) {
     generation.current++;
     setIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
-    setValidation(undefined);
   }
   function changeConstraints(c: Constraints) {
     generation.current++;
     setConstraints(c);
-    setValidation(undefined);
   }
-  async function check() {
-    await act(async () => {
-      const g = generation.current;
-      const r = await tool<Validation>("validate_schedule", {
-        term_code: term,
-        snapshot_version: version,
-        requested_courses: courses.map((c) => c.code),
-        section_ids: ids,
-        constraints,
-      });
-      if (g === generation.current) {
-        setValidation(r.data);
-        setMeta(r.meta);
-      }
-    });
+  function check() {
+    setValidationAttempt((attempt) => attempt + 1);
   }
   async function latest() {
     await act(async () => {
@@ -351,9 +406,8 @@ function App() {
       setIds((prev) =>
         prev.filter((id) => d.sections.some((s) => s.id === id)),
       );
-      setValidation(undefined);
       setNotice(
-        "Loaded the latest stored snapshot. Validate your selections again.",
+        "Loaded the latest stored snapshot. Your selections will be checked automatically.",
       );
     });
   }
@@ -439,7 +493,6 @@ function App() {
               setIds([]);
               setResults([]);
               setMeta(undefined);
-              setValidation(undefined);
             }}
           >
             {terms.length ? (
@@ -922,46 +975,24 @@ function App() {
                     }
                     onClick={() => void check()}
                   >
-                    {busy ? "Working…" : "Validate schedule"}
+                    {reviewState?.status === "pending"
+                      ? "Checking…"
+                      : "Check again"}
                   </button>
                 </div>
                 {validation ? (
-                  <>
-                    <p className={`status ${validation.status}`}>
-                      {validation.status === "indeterminate"
-                        ? "More information needed"
-                        : validation.status === "infeasible"
-                          ? "Conflicts to resolve"
-                          : "Feasible for checked constraints"}
-                      {validation.units !== null
-                        ? ` · ${validation.units} units`
-                        : ""}
-                    </p>
-                    <ul className="checks">
-                      {validation.checks.map((c, i) => (
-                        <li key={i}>
-                          <span className={c.status}>
-                            {c.status === "pass"
-                              ? "✓"
-                              : c.status === "fail"
-                                ? "!"
-                                : "?"}
-                          </span>
-                          {c.message}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
+                  <ScheduleReview value={validation} />
+                ) : reviewState?.status === "error" ? (
+                  <p role="alert" className="review-warning">
+                    {reviewState.message}
+                  </p>
                 ) : (
-                  <p className="muted">
-                    Your plan is unvalidated. Check selected sections against
-                    your time constraints.
+                  <p className="muted" role="status">
+                    {reviewState?.status === "pending"
+                      ? "Checking this selection…"
+                      : "Choose sections to check your schedule automatically."}
                   </p>
                 )}
-                <p className="footnote">
-                  Personal enrollment eligibility is unknown. Required component
-                  rules and meeting dates still need verification.
-                </p>
               </section>
               <div className="data-bar">
                 <div>

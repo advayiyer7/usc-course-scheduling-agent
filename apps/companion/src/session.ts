@@ -234,7 +234,9 @@ export class CompanionSession {
               environments: [],
               runtimeWorkspaceRoots: [],
               selectedCapabilityRoots: [],
-              baseInstructions: instruction,
+              baseInstructions:
+                instruction +
+                " Explain the separate validation summary for compatibility, required components, seats and eligibility. Use clearance_guidance or clearance fields returned by the course tools for official D-clearance instructions. Preserve audience, term and overdue-review warnings; never invent links or infer approval from a department route. GE-D is a curriculum category, not D-clearance.",
               developerInstructions:
                 "Use only the supplied course tools and ordinary conversation. No filesystem, shell, browser, plugins, or account actions are available.",
               dynamicTools,

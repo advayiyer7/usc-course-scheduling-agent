@@ -39,6 +39,7 @@ button:hover:not(:disabled) {
   filter: brightness(0.94);
 }
 button:focus-visible,
+a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 summary:focus-visible {
@@ -160,6 +161,9 @@ h3 {
   grid-template-columns: 340px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+.workspace > * {
+  min-width: 0;
 }
 .panel {
   background: #fff;
@@ -691,7 +695,7 @@ footer {
 }
 @media (max-width: 760px) {
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .intro {
     flex-direction: column;
@@ -727,4 +731,79 @@ footer {
   .time-pair {
     max-width: 380px;
   }
+}
+
+.schedule-review {
+  margin: 14px 0;
+  font-size: 13px;
+}
+.review-summary {
+  margin: 12px 0;
+  border-top: 1px solid #e4e1d8;
+}
+.review-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e4e1d8;
+}
+.review-summary dt {
+  color: #55534c;
+}
+.review-summary dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+.review-summary .pass {
+  color: #28595d;
+}
+.review-summary .fail {
+  color: #8d2029;
+}
+.review-summary .unknown,
+.review-warning {
+  color: #76551a;
+}
+.review-checks {
+  margin: 10px 0;
+}
+.review-checks summary,
+.clearance-links summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.clearance-course {
+  border-top: 1px solid #e4e1d8;
+  padding: 12px 0;
+}
+.section-availability {
+  list-style: none;
+  padding: 0;
+  margin: 7px 0;
+}
+.section-availability li {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+}
+.section-availability small,
+.clearance-links small {
+  color: #666258;
+}
+.clearance-links a {
+  color: #8d2029;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.clearance-links ul {
+  padding-left: 20px;
+}
+.clearance-links li {
+  margin-bottom: 14px;
+}
+.clearance-links p {
+  margin: 5px 0;
+  font-size: 12px;
 }

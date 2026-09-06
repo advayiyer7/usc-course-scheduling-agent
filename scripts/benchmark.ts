@@ -19,6 +19,14 @@ const count = 500,
 const before = await store.db.query(
   "SELECT next_at FROM upstream_budget WHERE id=1",
 );
+let upstreamRequests = 0;
+const originalFetch = globalThis.fetch;
+globalThis.fetch = (input, init) => {
+  const target = new URL(input instanceof Request ? input.url : String(input));
+  if (target.hostname === "usc.edu" || target.hostname.endsWith(".usc.edu"))
+    upstreamRequests++;
+  return originalFetch(input, init);
+};
 const started = performance.now();
 try {
   await Promise.all(
@@ -60,6 +68,7 @@ try {
         p50_ms: Math.round(durations[Math.floor(count * 0.5)]!),
         p95_ms: Math.round(durations[Math.floor(count * 0.95)]!),
         cache: service.metrics,
+        upstream_requests: upstreamRequests,
         upstream_budget_unchanged:
           JSON.stringify(before) === JSON.stringify(after),
         scope:
@@ -70,6 +79,7 @@ try {
     ),
   );
 } finally {
+  globalThis.fetch = originalFetch;
   await new Promise<void>((r) => server.close(() => r()));
   await store.db.close();
 }

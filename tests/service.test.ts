@@ -7,6 +7,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { programs, response, course, sourceSection } from "./fixtures.js";
 import type { Server } from "node:http";
+import {
+  validationReview,
+  clearanceGuidance,
+  sectionClearance,
+} from "../packages/contracts/src/review.js";
 let store: Store,
   service: CourseService,
   server: Server,
@@ -110,6 +115,39 @@ it("serves REST and MCP from the same service, including assistant instructions"
     ).json();
     const mcp = await client.callTool({ name: "get_courses", arguments: args });
     expect(mcp.structuredContent).toEqual(rest);
+    expect(
+      clearanceGuidance.safeParse(rest.data[0].courses[0].clearance_guidance)
+        .success,
+    ).toBe(true);
+    const sectionResult = await client.callTool({
+      name: "get_sections",
+      arguments: args,
+    });
+    expect(
+      sectionClearance.safeParse(
+        (sectionResult.structuredContent as any).data.items[0].clearance,
+      ).success,
+    ).toBe(true);
+    const selection = {
+      term_code: 20263,
+      snapshot_version: version,
+      requested_courses: ["TEST100"],
+      section_ids: ["10001"],
+    };
+    const restReview = await (
+      await fetch(base + "/api/tools/validate_schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selection),
+      })
+    ).json();
+    const mcpReview = await client.callTool({
+      name: "validate_schedule",
+      arguments: selection,
+    });
+    expect(mcpReview.structuredContent).toEqual(restReview);
+    expect(validationReview.safeParse(restReview.data).success).toBe(true);
+    expect(restReview.data.summary.eligibility).toBe("unknown");
     expect(
       (await client.readResource({ uri: "usc://assistant/instructions" }))
         .contents[0],

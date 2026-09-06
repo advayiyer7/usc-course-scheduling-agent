@@ -12,6 +12,7 @@ import {
 import type { Store } from "../../db/src/index.js";
 import { digest } from "../../source-usc/src/schema.js";
 import { validate } from "./validate.js";
+import { guidanceForCourse, clearanceForSection } from "./clearance.js";
 export class CourseService {
   private cache = new Map<
     string,
@@ -230,24 +231,37 @@ export class CourseService {
           data: matches.map((m) => ({
             requested_code: m.code,
             status: m.courses.length ? "found" : "not_found",
-            courses: m.courses,
+            courses: m.courses.map((c) => ({
+              ...c,
+              clearance_guidance: guidanceForCourse(c, r.term_code),
+            })),
           })),
           meta,
         };
       const keys = new Set(matches.flatMap((m) => m.courses.map((c) => c.key)));
-      if (name === "get_sections")
+      if (name === "get_sections") {
+        const selectedPage = page(
+          dataset.sections.filter((s) => keys.has(s.course_key)),
+          inputs.get_sections.parse(raw).limit,
+        );
         return {
           data: {
-            ...page(
-              dataset.sections.filter((c) => keys.has(c.course_key)),
-              inputs.get_sections.parse(raw).limit,
-            ),
+            ...selectedPage,
+            items: selectedPage.items.map((s) => ({
+              ...s,
+              clearance: clearanceForSection(
+                dataset.courses.find((c) => c.key === s.course_key)!,
+                s,
+                r.term_code,
+              ),
+            })),
             missing_courses: matches
               .filter((m) => !m.courses.length)
               .map((m) => m.code),
           },
           meta,
         };
+      }
       // No refresh for unknown codes. Cooldowns and queue limits apply even across different callers.
       const pairs = [
         ...new Set(
