@@ -48,11 +48,15 @@ npm run dev
 
 The backend serves public course data at `http://127.0.0.1:3000`. The companion does not replace it. If using the default embedded database, stop the backend before importing data; do not open the same embedded database from multiple processes.
 
-In the extension side panel, choose the sign-in action and complete the official OpenAI sign-in flow opened in the browser. Return to the panel after completion. Authentication stays in the companion's separate local profile. Never paste a password, token, browser cookie, or USC registration credential into the planner chat.
+In the extension side panel, choose **Connect companion**, then **Sign in with ChatGPT**. Click **Continue to OpenAI sign-in**, complete the official flow in that browser tab, and return to the panel. Authentication stays in the companion's separate local profile. Never paste a password, token, browser cookie, or USC registration credential into the planner chat.
 
 Choose the term, courses and time preferences, then ask the companion to propose a schedule. Review section IDs, times and validation findings before applying a proposal. Missing USC component/linking rules or meeting dates still leave registration validity unresolved; a proposal does not enroll you or reserve a seat.
 
-Use **Stop** to interrupt a running response, **Reset** to start a new conversation, and **Sign out** to end the companion account session. Reset is not account sign-out or secure deletion of local history. See the panel's actual labels if they differ in your build.
+Use **Stop response** to interrupt a running response, **New chat** to start a new conversation, and **Sign out** to end the companion account session. New chat is not account sign-out or secure deletion of local history. Closing the panel disconnects the companion and ends its ephemeral conversation; switching between **Chat with Codex** and **My planner** keeps the connection alive. Only one planner chat window can connect at a time.
+
+**Suggest schedules** asks the AI for candidates using the existing tools; it is not a deterministic optimizer. Draft cards show source age and validation status. **Load into planner** rechecks the draft against your current required courses and hard constraints before applying it. Coursebin buttons are deliberately absent from this pilot because authenticated WebReg interaction has not been implemented.
+
+Run `npm run smoke:companion` for a real signed-out Codex protocol test. After installation, `npm run smoke:native` verifies the installed launcher, account status and (when signed out) starts/cancels the official login flow without completing authentication or making a model request. Actual account access and chat must still be verified interactively.
 
 ## Account data and removal
 

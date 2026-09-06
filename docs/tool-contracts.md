@@ -35,4 +35,6 @@ A missing lab rule, unknown meeting time, or incomplete relevant dataset prevent
 
 ## Future tool, not in the initial contract
 
+The authorized local Codex companion adds `present_schedule` as a client-side dynamic tool, not a new REST/MCP endpoint. It accepts `validate_schedule` inputs plus a bounded title, enforces the planner's current hard constraints, invokes the existing validator, and returns a draft card with the validation envelope. Loading a card requires a student click and another validation against current planner constraints. Neither operation touches WebReg.
+
 `generate_schedules` accepts selected courses and explicit constraints, uses deterministic search/optimization, and returns a small set of validated alternatives. Add it only after component semantics and validator tests are established. Return solver completion/timeout state, scoring criteria and whether optimality was proven. Use jobs for work that exceeds the interactive runtime budget.

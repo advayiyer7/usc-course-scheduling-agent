@@ -1,16 +1,19 @@
 {
   "manifest_version": 3,
   "name": "USC Course Planner",
-  "version": "0.1.0",
-  "description": "Plan USC sections with your local course service and export for your assistant.",
+  "version": "0.2.0",
+  "description": "Plan USC courses in a side panel with your own Codex companion and validated schedule drafts.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwtBFjZbnesrx4uczUj0S23hAlY/ejn4+TOzWgvDCxQ0Et87JQaUTZSZWQlr3RMH5LQ1uYup3EXtrCb+tgxgpqrphc/cSB7lmEVSiU7461Wt8C6Q+BU63Gla+jigGO3tZb/w1M8KQfNBc/epzqxLNfOG30VKJmSoeM/cnmyRqo4wHSq39zvwwxxF2t+eHRxO1at7U/mnqy4pQ63yqW8EWsAWQpful3NhhVQYw8SMTJ4vo/xT8aX/X+5kwRyUkW09y/9FXK/Dx1tQBSzUSVPk8igGCzS3xSvLwG0orm8m/LoGfQi8F+E8rz8q56j+X7+z/S9LgXW3txdT3zc+yDqLXSQIDAQAB",
-  "permissions": ["storage"],
+  "permissions": ["storage", "sidePanel", "nativeMessaging"],
+  "minimum_chrome_version": "116",
+  "side_panel": { "default_path": "index.html" },
   "host_permissions": ["http://127.0.0.1:3000/*"],
   "action": {
     "default_title": "Open USC Course Planner"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

@@ -7,6 +7,11 @@ import {
   type Section,
 } from "../../../packages/contracts/src/index.js";
 import { readPreferences, savePreferences } from "./storage.js";
+import { ChatPanel } from "./ChatPanel.js";
+import {
+  protectConstraints,
+  type Proposal,
+} from "../../../packages/contracts/src/companion.js";
 import "./style.css";
 
 const API = "http://127.0.0.1:3000";
@@ -53,6 +58,7 @@ const labelTime = (t: string) => {
 };
 const colors = ["#8f272b", "#28595d", "#715a31", "#515c89", "#775b78"];
 function App() {
+  const [view, setView] = useState<"chat" | "planner">("chat");
   const [terms, setTerms] = useState<
       { term_code: number; snapshot_version: string }[]
     >([]),
@@ -110,6 +116,70 @@ function App() {
       } while (cursor);
     }
     return { courses: allCourses, sections: allSections, meta: m };
+  }
+  async function loadProposal(draft: Proposal) {
+    if (busy || !ready)
+      throw new Error("Wait for the planner to finish loading");
+    setBusy(true);
+    const g = generation.current;
+    try {
+      if (draft.selection.term_code !== term)
+        throw new Error(
+          "This draft is for another semester. Switch semesters deliberately before loading it.",
+        );
+      const s = protectConstraints(draft.selection, {
+        major: "",
+        term_code: term,
+        course_codes: courses.map((c) => c.code),
+        constraints,
+      });
+      const data = await retrieve(
+        s.requested_courses,
+        s.term_code,
+        s.snapshot_version,
+      );
+      const checked = await tool<Validation>("validate_schedule", {
+        term_code: s.term_code,
+        snapshot_version: s.snapshot_version,
+        requested_courses: s.requested_courses,
+        section_ids: s.section_ids,
+        constraints: s.constraints,
+      });
+      if (checked.data.status === "infeasible")
+        throw new Error(
+          "This draft has conflicts. Ask the assistant to revise it.",
+        );
+      if (g !== generation.current)
+        throw new Error(
+          "Planner changed while the draft was loading. Review and load it again.",
+        );
+      if (
+        s.section_ids.some(
+          (id) => !data.sections.some((section) => section.id === id),
+        )
+      )
+        throw new Error(
+          "Some proposed sections could not be found in the selected courses.",
+        );
+      generation.current++;
+      canSave.current = true;
+      setTerm(s.term_code);
+      setVersion(s.snapshot_version);
+      setCourses(data.courses);
+      setSections(data.sections);
+      setIds(s.section_ids);
+      setConstraints(s.constraints);
+      setMeta(checked.meta);
+      setValidation(checked.data);
+      setResults([]);
+      setError("");
+      setNotice(
+        "Assistant draft loaded and checked. Review any unknowns below. Your USC coursebin has not changed.",
+      );
+      setView("planner");
+    } finally {
+      setBusy(false);
+    }
   }
   useEffect(() => {
     let active = true;
@@ -349,7 +419,7 @@ function App() {
           </div>
         </div>
         <div className="header-actions">
-          <span className="local-dot">Local preview</span>
+          <span className="local-dot">Companion pilot</span>
           <label className="sr-only" htmlFor="term">
             Semester
           </label>
@@ -386,516 +456,560 @@ function App() {
         </div>
       </header>
       <main>
-        <div className="intro">
-          <div>
-            <p className="eyebrow">MAKE ROOM FOR YOUR SEMESTER</p>
-            <h1>A schedule that fits your life.</h1>
-            <p>
-              Choose your courses. Compare sections. Bring the details to your
-              AI assistant.
-            </p>
-          </div>
+        <nav className="workspace-nav" aria-label="Planner workspace">
           <button
-            className="outline"
-            disabled={!courses.length || busy}
-            onClick={exportPlan}
+            className={view === "chat" ? "" : "outline"}
+            aria-pressed={view === "chat"}
+            onClick={() => setView("chat")}
           >
-            Export for my assistant ↗
+            Chat with Codex
           </button>
+          <button
+            className={view === "planner" ? "" : "outline"}
+            aria-pressed={view === "planner"}
+            onClick={() => setView("planner")}
+          >
+            My planner{ids.length ? ` · ${ids.length} sections` : ""}
+          </button>
+        </nav>
+        <div hidden={view !== "chat"}>
+          <ChatPanel
+            context={{
+              major: "",
+              term_code: term,
+              course_codes: courses.map((c) => c.code),
+              constraints,
+            }}
+            plannerBusy={busy || !ready}
+            onLoad={loadProposal}
+          />
         </div>
-        {error && (
-          <div role="alert" className="alert error">
-            {error}
+        <div hidden={view !== "planner"}>
+          <div className="intro">
+            <div>
+              <p className="eyebrow">MAKE ROOM FOR YOUR SEMESTER</p>
+              <h1>A schedule that fits your life.</h1>
+              <p>
+                Choose your courses. Compare sections. Bring the details to your
+                AI assistant.
+              </p>
+            </div>
+            <button
+              className="outline"
+              disabled={!courses.length || busy}
+              onClick={exportPlan}
+            >
+              Export for my assistant ↗
+            </button>
           </div>
-        )}
-        {notice && (
-          <div role="status" className="alert">
-            {notice}
-          </div>
-        )}
-        <div className="workspace">
-          <aside>
-            <section className="panel">
-              <div className="panel-title">
-                <h2>Your courses</h2>
-                <span>{courses.length}/20</span>
-              </div>
-              <form
-                className="search"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void search();
-                }}
-              >
-                <label className="sr-only" htmlFor="query">
-                  Search course code or title
-                </label>
-                <input
-                  id="query"
-                  placeholder="Search code or title"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  maxLength={120}
-                />
-                <button
-                  disabled={busy || !ready || !query.trim()}
-                  type="submit"
+          {error && (
+            <div role="alert" className="alert error">
+              {error}
+            </div>
+          )}
+          {notice && (
+            <div role="status" className="alert">
+              {notice}
+            </div>
+          )}
+          <div className="workspace">
+            <aside>
+              <section className="panel">
+                <div className="panel-title">
+                  <h2>Your courses</h2>
+                  <span>{courses.length}/20</span>
+                </div>
+                <form
+                  className="search"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void search();
+                  }}
                 >
-                  Find
-                </button>
-              </form>
-              {results.length > 0 && (
-                <div className="results">
-                  {results.map((c) => (
-                    <button
-                      key={c.code}
-                      disabled={
-                        busy || courses.some((x) => x.aliases.includes(c.code))
+                  <label className="sr-only" htmlFor="query">
+                    Search course code or title
+                  </label>
+                  <input
+                    id="query"
+                    placeholder="Search code or title"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    maxLength={120}
+                  />
+                  <button
+                    disabled={busy || !ready || !query.trim()}
+                    type="submit"
+                  >
+                    Find
+                  </button>
+                </form>
+                {results.length > 0 && (
+                  <div className="results">
+                    {results.map((c) => (
+                      <button
+                        key={c.code}
+                        disabled={
+                          busy ||
+                          courses.some((x) => x.aliases.includes(c.code))
+                        }
+                        onClick={() => void add(c.code)}
+                      >
+                        <strong>{c.code}</strong>
+                        <span>{c.title}</span>
+                        <b>＋</b>
+                      </button>
+                    ))}
+                    {searchCursor && (
+                      <button disabled={busy} onClick={() => void search(true)}>
+                        More results
+                      </button>
+                    )}
+                  </div>
+                )}
+                {!courses.length && (
+                  <div className="empty">
+                    <span>01</span>
+                    <h3>Start with a course</h3>
+                    <p>
+                      Try CSCI 104, MATH 225, or a course title. Your choices
+                      stay on this device.
+                    </p>
+                  </div>
+                )}
+                {courses.map((c, i) => (
+                  <article className="course" key={c.key}>
+                    <div className="course-title">
+                      <span
+                        className="course-dot"
+                        style={{ background: colors[i % colors.length] }}
+                      />
+                      <div>
+                        <h3>{c.code}</h3>
+                        <p>{c.title}</p>
+                      </div>
+                      <button
+                        className="icon"
+                        disabled={busy}
+                        aria-label={`Remove ${c.code}`}
+                        onClick={() => remove(c.code)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <details>
+                      <summary>
+                        Choose sections{" "}
+                        <span>
+                          {
+                            selected.filter((s) => s.course_key === c.key)
+                              .length
+                          }{" "}
+                          selected
+                        </span>
+                      </summary>
+                      <div className="section-list">
+                        {sections
+                          .filter((s) => s.course_key === c.key)
+                          .map((s) => (
+                            <label
+                              key={s.id}
+                              className={
+                                ids.includes(s.id)
+                                  ? "section chosen"
+                                  : "section"
+                              }
+                            >
+                              <input
+                                type="checkbox"
+                                checked={ids.includes(s.id)}
+                                disabled={busy || s.cancelled}
+                                onChange={() => choose(s.id)}
+                              />
+                              <div>
+                                <strong>
+                                  {s.type} · {s.id}
+                                </strong>
+                                <span>
+                                  {s.meetings
+                                    .map(
+                                      (m) =>
+                                        `${m.days.join(", ") || "Days unknown"} ${m.start && m.end ? `${labelTime(m.start)}–${labelTime(m.end)}` : "Time unknown"}`,
+                                    )
+                                    .join(" / ")}
+                                </span>
+                                <span>
+                                  {s.instructors.join(", ") ||
+                                    "Instructor unassigned"}
+                                </span>
+                                <small>
+                                  {s.cancelled
+                                    ? "Cancelled"
+                                    : s.total_seats !== null &&
+                                        s.registered_seats !== null
+                                      ? `${Math.max(0, s.total_seats - s.registered_seats)} seats at last check`
+                                      : "Seats unknown"}
+                                  {s.d_clearance ? " · D-clearance" : ""}
+                                </small>
+                              </div>
+                            </label>
+                          ))}
+                      </div>
+                    </details>
+                  </article>
+                ))}
+              </section>
+              <section className="panel preferences">
+                <h2>Protect your time</h2>
+                <p className="muted">
+                  Hard limits apply to every proposed schedule.
+                </p>
+                <div className="time-pair">
+                  <label>
+                    Earliest class
+                    <input
+                      type="time"
+                      value={constraints.earliest ?? ""}
+                      onInput={(e) =>
+                        changeConstraints({
+                          ...constraints,
+                          earliest: e.currentTarget.value || undefined,
+                        })
                       }
-                      onClick={() => void add(c.code)}
+                    />
+                  </label>
+                  <label>
+                    Latest finish
+                    <input
+                      type="time"
+                      value={constraints.latest ?? ""}
+                      onInput={(e) =>
+                        changeConstraints({
+                          ...constraints,
+                          latest: e.currentTarget.value || undefined,
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+                <label className="small-label">Prefer these days free</label>
+                <div className="days">
+                  {weekdays.slice(0, 5).map((d) => (
+                    <button
+                      key={d}
+                      aria-pressed={constraints.preferences.free_days.includes(
+                        d as never,
+                      )}
+                      className={
+                        constraints.preferences.free_days.includes(d as never)
+                          ? "active"
+                          : ""
+                      }
+                      onClick={() =>
+                        changeConstraints({
+                          ...constraints,
+                          preferences: {
+                            ...constraints.preferences,
+                            free_days:
+                              constraints.preferences.free_days.includes(
+                                d as never,
+                              )
+                                ? constraints.preferences.free_days.filter(
+                                    (x) => x !== d,
+                                  )
+                                : [
+                                    ...constraints.preferences.free_days,
+                                    d as never,
+                                  ],
+                          },
+                        })
+                      }
                     >
-                      <strong>{c.code}</strong>
-                      <span>{c.title}</span>
-                      <b>＋</b>
+                      {d}
                     </button>
                   ))}
-                  {searchCursor && (
-                    <button disabled={busy} onClick={() => void search(true)}>
-                      More results
-                    </button>
-                  )}
                 </div>
-              )}
-              {!courses.length && (
-                <div className="empty">
-                  <span>01</span>
-                  <h3>Start with a course</h3>
-                  <p>
-                    Try CSCI 104, MATH 225, or a course title. Your choices stay
-                    on this device.
-                  </p>
-                </div>
-              )}
-              {courses.map((c, i) => (
-                <article className="course" key={c.key}>
-                  <div className="course-title">
-                    <span
-                      className="course-dot"
-                      style={{ background: colors[i % colors.length] }}
-                    />
-                    <div>
-                      <h3>{c.code}</h3>
-                      <p>{c.title}</p>
-                    </div>
+                <details>
+                  <summary>Add unavailable time</summary>
+                  <div className="block-input">
+                    <label>
+                      Day
+                      <select
+                        value={blockDay}
+                        onChange={(e) => setBlockDay(e.target.value)}
+                      >
+                        {weekdays.map((d) => (
+                          <option key={d}>{d}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Start
+                      <input
+                        type="time"
+                        value={blockStart}
+                        onInput={(e) => setBlockStart(e.currentTarget.value)}
+                      />
+                    </label>
+                    <label>
+                      End
+                      <input
+                        type="time"
+                        value={blockEnd}
+                        onInput={(e) => setBlockEnd(e.currentTarget.value)}
+                      />
+                    </label>
                     <button
-                      className="icon"
-                      disabled={busy}
-                      aria-label={`Remove ${c.code}`}
-                      onClick={() => remove(c.code)}
+                      onClick={() => {
+                        if (constraints.unavailable.length >= 50) {
+                          setError("Use at most 50 unavailable time blocks.");
+                          return;
+                        }
+                        if (blockStart >= blockEnd) {
+                          setError(
+                            "Unavailable time must end after it starts.",
+                          );
+                          return;
+                        }
+                        changeConstraints({
+                          ...constraints,
+                          unavailable: [
+                            ...constraints.unavailable,
+                            {
+                              days: [blockDay as never],
+                              start: blockStart,
+                              end: blockEnd,
+                            },
+                          ],
+                        });
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </details>
+                {constraints.unavailable.map((b, i) => (
+                  <div className="block-chip" key={i}>
+                    {b.days.join(", ")} {b.start}–{b.end}
+                    <button
+                      aria-label={`Remove unavailable block ${i + 1}`}
+                      onClick={() =>
+                        changeConstraints({
+                          ...constraints,
+                          unavailable: constraints.unavailable.filter(
+                            (_, j) => j !== i,
+                          ),
+                        })
+                      }
                     >
                       ×
                     </button>
                   </div>
-                  <details>
-                    <summary>
-                      Choose sections{" "}
-                      <span>
-                        {selected.filter((s) => s.course_key === c.key).length}{" "}
-                        selected
-                      </span>
-                    </summary>
-                    <div className="section-list">
-                      {sections
-                        .filter((s) => s.course_key === c.key)
-                        .map((s) => (
-                          <label
-                            key={s.id}
-                            className={
-                              ids.includes(s.id) ? "section chosen" : "section"
-                            }
-                          >
-                            <input
-                              type="checkbox"
-                              checked={ids.includes(s.id)}
-                              disabled={busy || s.cancelled}
-                              onChange={() => choose(s.id)}
-                            />
-                            <div>
-                              <strong>
-                                {s.type} · {s.id}
-                              </strong>
-                              <span>
-                                {s.meetings
-                                  .map(
-                                    (m) =>
-                                      `${m.days.join(", ") || "Days unknown"} ${m.start && m.end ? `${labelTime(m.start)}–${labelTime(m.end)}` : "Time unknown"}`,
-                                  )
-                                  .join(" / ")}
-                              </span>
-                              <span>
-                                {s.instructors.join(", ") ||
-                                  "Instructor unassigned"}
-                              </span>
-                              <small>
-                                {s.cancelled
-                                  ? "Cancelled"
-                                  : s.total_seats !== null &&
-                                      s.registered_seats !== null
-                                    ? `${Math.max(0, s.total_seats - s.registered_seats)} seats at last check`
-                                    : "Seats unknown"}
-                                {s.d_clearance ? " · D-clearance" : ""}
-                              </small>
-                            </div>
-                          </label>
-                        ))}
-                    </div>
-                  </details>
-                </article>
-              ))}
-            </section>
-            <section className="panel preferences">
-              <h2>Protect your time</h2>
-              <p className="muted">
-                Hard limits apply to every proposed schedule.
-              </p>
-              <div className="time-pair">
-                <label>
-                  Earliest class
-                  <input
-                    type="time"
-                    value={constraints.earliest ?? ""}
-                    onInput={(e) =>
-                      changeConstraints({
-                        ...constraints,
-                        earliest: e.currentTarget.value || undefined,
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Latest finish
-                  <input
-                    type="time"
-                    value={constraints.latest ?? ""}
-                    onInput={(e) =>
-                      changeConstraints({
-                        ...constraints,
-                        latest: e.currentTarget.value || undefined,
-                      })
-                    }
-                  />
-                </label>
-              </div>
-              <label className="small-label">Prefer these days free</label>
-              <div className="days">
-                {weekdays.slice(0, 5).map((d) => (
-                  <button
-                    key={d}
-                    aria-pressed={constraints.preferences.free_days.includes(
-                      d as never,
-                    )}
-                    className={
-                      constraints.preferences.free_days.includes(d as never)
-                        ? "active"
-                        : ""
-                    }
-                    onClick={() =>
-                      changeConstraints({
-                        ...constraints,
-                        preferences: {
-                          ...constraints.preferences,
-                          free_days: constraints.preferences.free_days.includes(
-                            d as never,
-                          )
-                            ? constraints.preferences.free_days.filter(
-                                (x) => x !== d,
-                              )
-                            : [
-                                ...constraints.preferences.free_days,
-                                d as never,
-                              ],
-                        },
-                      })
-                    }
-                  >
-                    {d}
-                  </button>
                 ))}
-              </div>
-              <details>
-                <summary>Add unavailable time</summary>
-                <div className="block-input">
-                  <label>
-                    Day
-                    <select
-                      value={blockDay}
-                      onChange={(e) => setBlockDay(e.target.value)}
-                    >
-                      {weekdays.map((d) => (
-                        <option key={d}>{d}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Start
-                    <input
-                      type="time"
-                      value={blockStart}
-                      onInput={(e) => setBlockStart(e.currentTarget.value)}
-                    />
-                  </label>
-                  <label>
-                    End
-                    <input
-                      type="time"
-                      value={blockEnd}
-                      onInput={(e) => setBlockEnd(e.currentTarget.value)}
-                    />
-                  </label>
-                  <button
-                    onClick={() => {
-                      if (constraints.unavailable.length >= 50) {
-                        setError("Use at most 50 unavailable time blocks.");
-                        return;
-                      }
-                      if (blockStart >= blockEnd) {
-                        setError("Unavailable time must end after it starts.");
-                        return;
-                      }
-                      changeConstraints({
-                        ...constraints,
-                        unavailable: [
-                          ...constraints.unavailable,
-                          {
-                            days: [blockDay as never],
-                            start: blockStart,
-                            end: blockEnd,
-                          },
-                        ],
-                      });
-                    }}
-                  >
-                    Add
-                  </button>
-                </div>
-              </details>
-              {constraints.unavailable.map((b, i) => (
-                <div className="block-chip" key={i}>
-                  {b.days.join(", ")} {b.start}–{b.end}
-                  <button
-                    aria-label={`Remove unavailable block ${i + 1}`}
-                    onClick={() =>
-                      changeConstraints({
-                        ...constraints,
-                        unavailable: constraints.unavailable.filter(
-                          (_, j) => j !== i,
-                        ),
-                      })
-                    }
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </section>
-          </aside>
-          <div className="right">
-            <section className="panel calendar-panel">
-              <div className="calendar-heading">
-                <div>
-                  <p className="eyebrow">YOUR WEEK AT A GLANCE</p>
-                  <h2>
-                    {ids.length
-                      ? `${ids.length} selected sections`
-                      : "Build your week"}
-                  </h2>
-                </div>
-                <span className="timezone">Los Angeles time</span>
-              </div>
-              <div className="calendar-scroll">
-                <div className="calendar">
-                  <div className="day-head">
-                    <span />
-                    {weekdays.map((d) => (
-                      <b key={d}>{d}</b>
-                    ))}
+              </section>
+            </aside>
+            <div className="right">
+              <section className="panel calendar-panel">
+                <div className="calendar-heading">
+                  <div>
+                    <p className="eyebrow">YOUR WEEK AT A GLANCE</p>
+                    <h2>
+                      {ids.length
+                        ? `${ids.length} selected sections`
+                        : "Build your week"}
+                    </h2>
                   </div>
-                  <div className="calendar-body" style={{ height }}>
-                    <div className="time-axis">
-                      {Array.from({ length: lastHour - firstHour }, (_, i) => (
-                        <span key={i} style={{ top: i * 60 }}>
-                          {(i + firstHour) % 12 || 12}
-                          {i + firstHour < 12 ? "a" : "p"}
-                        </span>
+                  <span className="timezone">Los Angeles time</span>
+                </div>
+                <div className="calendar-scroll">
+                  <div className="calendar">
+                    <div className="day-head">
+                      <span />
+                      {weekdays.map((d) => (
+                        <b key={d}>{d}</b>
                       ))}
                     </div>
-                    {weekdays.map((day) => (
-                      <div className="day-column" key={day}>
-                        {constraints.unavailable
-                          .filter((b) => b.days.includes(day as never))
-                          .map((b, i) => (
-                            <div
-                              className="calendar-block unavailable"
-                              key={`blocked${i}`}
-                              style={{
-                                top: minute(b.start) - firstHour * 60,
-                                height: minute(b.end) - minute(b.start),
-                              }}
-                            >
-                              Unavailable
-                            </div>
-                          ))}
-                        {selected.flatMap((s) =>
-                          s.meetings
-                            .filter(
-                              (m) => m.days.includes(day) && m.start && m.end,
-                            )
-                            .map((m, i) => (
-                              <button
-                                className="calendar-block"
-                                key={s.id + i}
-                                title={`${s.course_key} ${s.type} ${s.id}: ${m.start}–${m.end}`}
-                                onClick={() => {
-                                  setNotice(
-                                    `${s.course_key} · ${s.type} ${s.id} · ${s.instructors.join(", ") || "Instructor unassigned"}`,
-                                  );
-                                }}
-                                style={{
-                                  top: minute(m.start!) - firstHour * 60,
-                                  height: Math.max(
-                                    24,
-                                    minute(m.end!) - minute(m.start!),
-                                  ),
-                                  background:
-                                    colors[
-                                      Math.max(
-                                        0,
-                                        courses.findIndex(
-                                          (c) => c.key === s.course_key,
-                                        ),
-                                      ) % colors.length
-                                    ],
-                                }}
-                              >
-                                <b>{s.course_key}</b>
-                                <span>
-                                  {labelTime(m.start!)}–{labelTime(m.end!)}
-                                </span>
-                                <small>
-                                  {s.type} · {s.id}
-                                </small>
-                              </button>
-                            )),
+                    <div className="calendar-body" style={{ height }}>
+                      <div className="time-axis">
+                        {Array.from(
+                          { length: lastHour - firstHour },
+                          (_, i) => (
+                            <span key={i} style={{ top: i * 60 }}>
+                              {(i + firstHour) % 12 || 12}
+                              {i + firstHour < 12 ? "a" : "p"}
+                            </span>
+                          ),
                         )}
                       </div>
-                    ))}
+                      {weekdays.map((day) => (
+                        <div className="day-column" key={day}>
+                          {constraints.unavailable
+                            .filter((b) => b.days.includes(day as never))
+                            .map((b, i) => (
+                              <div
+                                className="calendar-block unavailable"
+                                key={`blocked${i}`}
+                                style={{
+                                  top: minute(b.start) - firstHour * 60,
+                                  height: minute(b.end) - minute(b.start),
+                                }}
+                              >
+                                Unavailable
+                              </div>
+                            ))}
+                          {selected.flatMap((s) =>
+                            s.meetings
+                              .filter(
+                                (m) => m.days.includes(day) && m.start && m.end,
+                              )
+                              .map((m, i) => (
+                                <button
+                                  className="calendar-block"
+                                  key={s.id + i}
+                                  title={`${s.course_key} ${s.type} ${s.id}: ${m.start}–${m.end}`}
+                                  onClick={() => {
+                                    setNotice(
+                                      `${s.course_key} · ${s.type} ${s.id} · ${s.instructors.join(", ") || "Instructor unassigned"}`,
+                                    );
+                                  }}
+                                  style={{
+                                    top: minute(m.start!) - firstHour * 60,
+                                    height: Math.max(
+                                      24,
+                                      minute(m.end!) - minute(m.start!),
+                                    ),
+                                    background:
+                                      colors[
+                                        Math.max(
+                                          0,
+                                          courses.findIndex(
+                                            (c) => c.key === s.course_key,
+                                          ),
+                                        ) % colors.length
+                                      ],
+                                  }}
+                                >
+                                  <b>{s.course_key}</b>
+                                  <span>
+                                    {labelTime(m.start!)}–{labelTime(m.end!)}
+                                  </span>
+                                  <small>
+                                    {s.type} · {s.id}
+                                  </small>
+                                </button>
+                              )),
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {!ids.length && (
-                <div className="calendar-note">
-                  Select lecture, lab, discussion and quiz sections to place
-                  them on your calendar.
+                {!ids.length && (
+                  <div className="calendar-note">
+                    Select lecture, lab, discussion and quiz sections to place
+                    them on your calendar.
+                  </div>
+                )}
+              </section>
+              <section className="panel review">
+                <div className="panel-title">
+                  <div>
+                    <p className="eyebrow">CHECK BEFORE YOU COMMIT</p>
+                    <h2>Schedule review</h2>
+                  </div>
+                  <button
+                    disabled={
+                      busy || !ids.length || !courses.length || !version
+                    }
+                    onClick={() => void check()}
+                  >
+                    {busy ? "Working…" : "Validate schedule"}
+                  </button>
                 </div>
-              )}
-            </section>
-            <section className="panel review">
-              <div className="panel-title">
-                <div>
-                  <p className="eyebrow">CHECK BEFORE YOU COMMIT</p>
-                  <h2>Schedule review</h2>
-                </div>
-                <button
-                  disabled={busy || !ids.length || !courses.length || !version}
-                  onClick={() => void check()}
-                >
-                  {busy ? "Working…" : "Validate schedule"}
-                </button>
-              </div>
-              {validation ? (
-                <>
-                  <p className={`status ${validation.status}`}>
-                    {validation.status === "indeterminate"
-                      ? "More information needed"
-                      : validation.status === "infeasible"
-                        ? "Conflicts to resolve"
-                        : "Feasible for checked constraints"}
-                    {validation.units !== null
-                      ? ` · ${validation.units} units`
-                      : ""}
+                {validation ? (
+                  <>
+                    <p className={`status ${validation.status}`}>
+                      {validation.status === "indeterminate"
+                        ? "More information needed"
+                        : validation.status === "infeasible"
+                          ? "Conflicts to resolve"
+                          : "Feasible for checked constraints"}
+                      {validation.units !== null
+                        ? ` · ${validation.units} units`
+                        : ""}
+                    </p>
+                    <ul className="checks">
+                      {validation.checks.map((c, i) => (
+                        <li key={i}>
+                          <span className={c.status}>
+                            {c.status === "pass"
+                              ? "✓"
+                              : c.status === "fail"
+                                ? "!"
+                                : "?"}
+                          </span>
+                          {c.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="muted">
+                    Your plan is unvalidated. Check selected sections against
+                    your time constraints.
                   </p>
-                  <ul className="checks">
-                    {validation.checks.map((c, i) => (
-                      <li key={i}>
-                        <span className={c.status}>
-                          {c.status === "pass"
-                            ? "✓"
-                            : c.status === "fail"
-                              ? "!"
-                              : "?"}
-                        </span>
-                        {c.message}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <p className="muted">
-                  Your plan is unvalidated. Check selected sections against your
-                  time constraints.
+                )}
+                <p className="footnote">
+                  Personal enrollment eligibility is unknown. Required component
+                  rules and meeting dates still need verification.
                 </p>
-              )}
-              <p className="footnote">
-                Personal enrollment eligibility is unknown. Required component
-                rules and meeting dates still need verification.
-              </p>
-            </section>
-            <div className="data-bar">
-              <div>
-                <strong>
-                  {meta?.stale
-                    ? "Stored snapshot · refresh recommended"
-                    : "Public course snapshot"}
-                </strong>
+              </section>
+              <div className="data-bar">
+                <div>
+                  <strong>
+                    {meta?.stale
+                      ? "Stored snapshot · refresh recommended"
+                      : "Public course snapshot"}
+                  </strong>
+                  <p>
+                    {meta
+                      ? `Checked ${new Date(meta.checked_at).toLocaleString()}`
+                      : "Select a course to see its data timestamp."}{" "}
+                    · Seats are not reserved.
+                  </p>
+                </div>
+                <div>
+                  <button
+                    className="text-button"
+                    disabled={busy || !courses.length}
+                    onClick={() => void latest()}
+                  >
+                    Load latest
+                  </button>
+                  <button
+                    className="text-button"
+                    disabled={busy || !courses.length}
+                    onClick={() => void refresh()}
+                  >
+                    Request refresh
+                  </button>
+                </div>
+              </div>
+              <details className="assistant-guide">
+                <summary>Connect your AI assistant</summary>
                 <p>
-                  {meta
-                    ? `Checked ${new Date(meta.checked_at).toLocaleString()}`
-                    : "Select a course to see its data timestamp."}{" "}
-                  · Seats are not reserved.
+                  Local MCP endpoint: <code>http://127.0.0.1:3000/mcp</code>.
+                  Use a local MCP client, or the repository’s stdio command.
+                  Hosted ChatGPT and Claude cannot reach this local address
+                  directly; hosted deployment and onboarding are pending.
                 </p>
-              </div>
-              <div>
-                <button
-                  className="text-button"
-                  disabled={busy || !courses.length}
-                  onClick={() => void latest()}
-                >
-                  Load latest
-                </button>
-                <button
-                  className="text-button"
-                  disabled={busy || !courses.length}
-                  onClick={() => void refresh()}
-                >
-                  Request refresh
-                </button>
-              </div>
+                <p>
+                  For other assistants, export selected course data above and
+                  attach the file. Installing this extension does not
+                  automatically connect an AI account. No provider API key is
+                  needed for this planner.
+                </p>
+              </details>
             </div>
-            <details className="assistant-guide">
-              <summary>Connect your AI assistant</summary>
-              <p>
-                Local MCP endpoint: <code>http://127.0.0.1:3000/mcp</code>. Use
-                a local MCP client, or the repository’s stdio command. Hosted
-                ChatGPT and Claude cannot reach this local address directly;
-                hosted deployment and onboarding are pending.
-              </p>
-              <p>
-                For other assistants, export selected course data above and
-                attach the file. Installing this extension does not
-                automatically connect an AI account. No provider API key is
-                needed for this planner.
-              </p>
-            </details>
           </div>
         </div>
       </main>

@@ -25,6 +25,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run smoke:companion
       - run: npm test
         env:
           TEST_DATABASE_URL: postgres://usc:usc@127.0.0.1:5432/usc_test

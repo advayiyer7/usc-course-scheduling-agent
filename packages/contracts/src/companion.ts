@@ -99,3 +99,55 @@ export function trustedLoginUrl(value: string): boolean {
     return false;
   }
 }
+
+export function protectConstraints(
+  candidate: z.infer<typeof proposalInput>,
+  context: z.infer<typeof planningContext>,
+) {
+  if (candidate.term_code !== context.term_code)
+    throw new Error("Proposal semester differs from the current planner");
+  const a = candidate.constraints,
+    b = context.constraints;
+  const unavailable = [
+    ...new Map(
+      [...a.unavailable, ...b.unavailable].map((v) => [JSON.stringify(v), v]),
+    ).values(),
+  ];
+  const times = (x?: string, y?: string, latest = false) =>
+    x && y ? (latest ? [x, y].sort()[0] : [x, y].sort()[1]) : (x ?? y);
+  return proposalInput.parse({
+    ...candidate,
+    requested_courses: [
+      ...new Set([...context.course_codes, ...candidate.requested_courses]),
+    ],
+    constraints: constraints.parse({
+      ...a,
+      preferences: {
+        instructors: [
+          ...new Set([
+            ...b.preferences.instructors,
+            ...a.preferences.instructors,
+          ]),
+        ],
+        free_days: [
+          ...new Set([...b.preferences.free_days, ...a.preferences.free_days]),
+        ],
+      },
+      unavailable,
+      earliest: times(a.earliest, b.earliest),
+      latest: times(a.latest, b.latest, true),
+      min_units:
+        a.min_units === undefined
+          ? b.min_units
+          : b.min_units === undefined
+            ? a.min_units
+            : Math.max(a.min_units, b.min_units),
+      max_units:
+        a.max_units === undefined
+          ? b.max_units
+          : b.max_units === undefined
+            ? a.max_units
+            : Math.min(a.max_units, b.max_units),
+    }),
+  });
+}

@@ -2,9 +2,11 @@
 
 A shared USC course-data service that students can use through an MCP-compatible AI assistant and a companion Chrome extension.
 
-**Status: working local prototype with ingestion, REST/MCP assistant tools, conservative validation, and a companion Chrome extension build. Production deployment and provider-host onboarding are not complete.**
+**Status: local pilot with a Codex native companion, extension side-panel chat, validated AI draft handoff, REST/MCP course tools, and scheduled semester caching. Account-authenticated inference, hosted deployment, consumer installers, and WebReg coursebin actions are not yet verified or released.**
 
 [Run locally and load the extension](docs/local-setup.md).
+
+[Install the Codex companion and connect chat](docs/companion-setup.md). USC ChatGPT Edu does not automatically include Codex: ITS currently requires an access request and department approval.
 
 ## Specification
 
@@ -18,9 +20,9 @@ The runtime prompt describes how a scheduling assistant should behave. The imple
 
 ## Product scope
 
-Students choose courses and preferences, inspect section alternatives, and validate proposed schedules. Their chosen assistant performs the conversation and initial planning. The backend provides authoritative data and deterministic validation. Full schedule generation is a later phase.
+Students choose courses and preferences, chat with their own Codex runtime inside the extension, inspect section alternatives, and validate proposed schedules. The companion can display up to three AI-generated draft cards; students choose whether to load a draft into their calendar. The backend supplies source-backed public data and deterministic validation. Deterministic schedule optimization remains a later phase.
 
-The Chrome extension displays preferences, saved course selections, and a weekly calendar. It calls the same backend over HTTPS. It does not automatically grant tools to arbitrary AI chat websites.
+The Chrome extension displays chat, preferences, saved course selections, and a weekly calendar. The local pilot calls the backend over loopback HTTP; a production deployment would require HTTPS and authentication. Native messaging connects only this extension to its locally installed companion. It does not automatically grant tools to arbitrary AI chat websites.
 
 No automatic enrollment, degree certification, professor ratings, or collection of USC credentials in the initial scope.
 
@@ -60,3 +62,9 @@ To use a local stdio-capable assistant, configure a command equivalent to `npm -
 `npm run smoke` uses the official MCP client to discover tools, retrieve CSCI104 and validate a section against the imported Fall 2026 snapshot. This verifies the protocol, not onboarding in ChatGPT, Claude or DeepSeek.
 
 Validation detects known weekly overlaps and hard time-block violations, but deliberately returns `indeterminate` for missing date ranges or unverified component/linking rules. It never certifies enrollment eligibility.
+
+## Companion verification
+
+`npm run smoke:companion` exercises pinned Codex 0.153.4 with a temporary signed-out profile, verifies restricted feature configuration and creates an ephemeral dynamic-tool thread. It makes no model request. After installation, `npm run smoke:native` checks the real launcher and Chrome message framing; for a signed-out companion it also starts and cancels the official login flow. It does not complete sign-in or consume model usage. Mock tests cover streaming, validation handoff, permission boundaries, cancellation and installer behavior; these are distinct from an authenticated end-to-end test.
+
+Cached current/upcoming semesters now have daily full reconciliation while a worker runs. [Semester cache configuration](docs/semester-cache.md) explains durable retry behavior, configuration and shared source request limits. A cache refresh is not a seat reservation or a source-freshness guarantee.

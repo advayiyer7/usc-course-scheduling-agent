@@ -1,5 +1,7 @@
 # Run the local prototype
 
+For chat inside the extension using your own Codex account, follow [companion setup](companion-setup.md). The steps below configure the shared course backend and manual planner. The browser preview cannot run a native companion.
+
 ## Requirements
 
 Node.js 24 LTS or 26, npm, and a cloned repository. Run commands from the repository root. npm scripts load `.env` when present. No AI provider key is needed.

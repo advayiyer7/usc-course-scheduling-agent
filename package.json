@@ -21,7 +21,9 @@
     "format": "prettier --write \"{apps,packages,scripts,tests}/**/*.{ts,tsx,css,json}\"",
     "benchmark": "node --env-file-if-exists=.env --import=tsx scripts/benchmark.ts",
     "smoke:stdio": "node --env-file-if-exists=.env --import=tsx scripts/smoke-stdio.ts",
-    "smoke:companion": "node --import=tsx scripts/smoke-companion.ts"
+    "smoke:companion": "node --import=tsx scripts/smoke-companion.ts",
+    "companion:install": "node --import=tsx scripts/install-companion.ts",
+    "smoke:native": "node --import=tsx scripts/smoke-native.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",
