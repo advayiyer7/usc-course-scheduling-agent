@@ -22,6 +22,11 @@ function data(start: string) {
 }
 it("detects overlap while keeping personal eligibility unknown", () => {
   const d = data("10:30");
+  for (const s of d.sections)
+    Object.assign(s.meetings[0]!, {
+      start_date: "2026-08-24",
+      end_date: "2026-12-04",
+    });
   const r = validate(request(["10001", "10002"]), d.courses, d.sections);
   expect(r.status).toBe("infeasible");
   expect(

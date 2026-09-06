@@ -29,9 +29,14 @@ For pagination, the cursor pins the snapshot. Do not silently switch versions be
 - `checks`: time conflicts, required course coverage, required section components, units, cancellations, hard preferences and data completeness. Each check has pass/fail/unknown and supporting IDs.
 - `eligibility`: independent status; generally `unknown` without student-specific authoritative data.
 - `availability`: independent per-section snapshot, timestamp and warning. A full section may be time-compatible but not currently available.
+- `summary`: separate `compatibility` and `components` pass/fail/unknown values, `availability` as `seats_reported`/`full`/`unknown`, and `eligibility: unknown`. Compatibility covers modeled constraints other than component rules; it is not enrollment eligibility.
 - `preferences`: transparent score components or matched/unmatched preferences; no invented teaching-quality scores.
 
 A missing lab rule, unknown meeting time, or incomplete relevant dataset prevents an unqualified feasible result. `feasible` never means registered or guaranteed eligible. Validation does not mutate a course bin or enrollment.
+
+`get_courses` adds `clearance_guidance`; `get_sections` and validation availability rows add `clearance`. The latter separates the source's requirement flag from personal `approval_status: unknown`. Guidance carries bounded official instruction routes, audiences, source URLs, independent verification/review dates, registry version, coverage and warnings. No student-triggered scraping is needed. See [clearance evidence and coverage](d-clearance.md). An overdue guide or catalog-only route is explicitly labeled; no link is an assurance that an application is open.
+
+Weekly overlaps with missing actual dates produce an unknown `time_conflict`, even when session codes match. A confirmed conflict requires valid overlapping dates with a shared actual weekday. Missing requested records prevent partial unit totals being presented as a complete total. Full seats and D-clearance do not by themselves create a modeled time conflict.
 
 ## Future tool, not in the initial contract
 
