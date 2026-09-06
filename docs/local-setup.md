@@ -28,7 +28,7 @@ Then open `http://127.0.0.1:3000/app/`. This is the same React planner UI packag
 3. Select Load unpacked and choose `apps/extension/build` inside this repository.
 4. Click the extension's toolbar action to open the planner.
 
-The development manifest has a fixed public key, so its ID is `hcihcmbmpmfdihdgejlclbaegnhgjhdk`. The backend allows that exact extension origin. Its permissions are local storage and access to `http://127.0.0.1:3000/*`; no access to USC login pages or other AI websites is requested. The public manifest key is not a server secret or private signing key.
+The development manifest has a fixed public key, so its ID is `hcihcmbmpmfdihdgejlclbaegnhgjhdk`. The backend allows that exact extension origin. Its permissions are local storage, the Chrome side panel, native messaging to the installed companion, and access to `http://127.0.0.1:3000/*`; no access to USC login pages or other AI websites is requested. The public manifest key is not a server secret or private signing key.
 
 ## Assistant connection
 
@@ -50,7 +50,7 @@ cp .env.example .env
 
 Set `DATABASE_URL=postgres://usc:usc@127.0.0.1:5432/usc` in `.env`, ingest/import data into that database, then run `npm run dev` and `npm run worker` in separate terminals. The default PGlite database is single-process: the HTTP application runs its refresh worker internally. Do not simultaneously open `data/local` from another API, ingest or stdio process. Stop the API before a CLI import in embedded mode.
 
-The worker drains user-requested, coalesced refresh jobs. Automatic calendar-based full refresh scheduling is not enabled; run the ingest command explicitly. Archived-term classification, retention/pruning, and production refresh scheduling remain follow-up work.
+The worker drains user-requested, coalesced refresh jobs and automatically reconciles cached current/upcoming semesters every 24 hours while it is running. The interval and eligible terms are configurable; see [semester cache and scheduled refreshes](semester-cache.md). Full and targeted refreshes share the same upstream request budget, and failures preserve the previous good snapshot. An empty cache needs an initial import/ingestion or an explicit configured term. Automatic discovery of newly published semesters, authoritative active/archive classification, snapshot retention/pruning, and a hosted worker remain follow-up work.
 
 ## Verification
 
