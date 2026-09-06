@@ -2,7 +2,9 @@
 
 A shared USC course-data service that students can use through an MCP-compatible AI assistant and a companion Chrome extension.
 
-**Status: local backend and assistant tools implemented; companion extension under construction. Production deployment and provider-host onboarding are not complete.**
+**Status: working local prototype with ingestion, REST/MCP assistant tools, conservative validation, and a companion Chrome extension build. Production deployment and provider-host onboarding are not complete.**
+
+[Run locally and load the extension](docs/local-setup.md).
 
 ## Specification
 

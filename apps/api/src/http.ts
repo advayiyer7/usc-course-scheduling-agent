@@ -1,4 +1,5 @@
 import express from "express";
+import { EXTENSION_ORIGIN } from "../../../packages/contracts/src/extension.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { makeMcp } from "./mcp.js";
 import type { CourseService } from "../../../packages/domain/src/service.js";
@@ -20,22 +21,22 @@ export function createApp(
   app.use((req, res, next) => {
     const host = req.hostname;
     if (!["127.0.0.1", "localhost", "[::1]"].includes(host))
-      return void res
-        .status(403)
-        .json({
-          error: {
-            code: "FORBIDDEN",
-            message: "Local development service only.",
-          },
-        });
+      return void res.status(403).json({
+        error: {
+          code: "FORBIDDEN",
+          message: "Local development service only.",
+        },
+      });
     const origin = req.headers.origin;
-    const allowed = [`http://${req.headers.host}`, ...(options.origins ?? [])];
+    const allowed = [
+      `http://${req.headers.host}`,
+      EXTENSION_ORIGIN,
+      ...(options.origins ?? []),
+    ];
     if (origin && !allowed.includes(origin))
-      return void res
-        .status(403)
-        .json({
-          error: { code: "FORBIDDEN", message: "Origin is not allowed." },
-        });
+      return void res.status(403).json({
+        error: { code: "FORBIDDEN", message: "Origin is not allowed." },
+      });
     if (origin) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Vary", "Origin");
@@ -61,15 +62,13 @@ export function createApp(
       ++global.count > 6000
     ) {
       res.setHeader("Retry-After", "60");
-      return void res
-        .status(429)
-        .json({
-          error: {
-            code: "RATE_LIMITED",
-            message: "Request limit exceeded.",
-            retry_after_seconds: 60,
-          },
-        });
+      return void res.status(429).json({
+        error: {
+          code: "RATE_LIMITED",
+          message: "Request limit exceeded.",
+          retry_after_seconds: 60,
+        },
+      });
     }
     next();
   });
@@ -105,13 +104,11 @@ export function createApp(
       await transport.handleRequest(req, res, req.body);
     } catch {
       if (!res.headersSent)
-        res
-          .status(500)
-          .json({
-            jsonrpc: "2.0",
-            id: null,
-            error: { code: -32603, message: "MCP request failed." },
-          });
+        res.status(500).json({
+          jsonrpc: "2.0",
+          id: null,
+          error: { code: -32603, message: "MCP request failed." },
+        });
     }
   });
   app.all("/mcp", (_req, res) =>
@@ -128,14 +125,12 @@ export function createApp(
       res: express.Response,
       _next: express.NextFunction,
     ) => {
-      res
-        .status(error.type === "entity.too.large" ? 413 : 400)
-        .json({
-          error: {
-            code: "INVALID_INPUT",
-            message: "Request body is invalid or too large.",
-          },
-        });
+      res.status(error.type === "entity.too.large" ? 413 : 400).json({
+        error: {
+          code: "INVALID_INPUT",
+          message: "Request body is invalid or too large.",
+        },
+      });
     },
   );
   return app;

@@ -1,6 +1,6 @@
 # Initial tool contracts
 
-These are design contracts, not implemented tools. MCP and REST call the same domain functions. Validate inputs in code. Tool descriptions must explain unknown fields and freshness limitations.
+The six initial tools are implemented for local development; limits below describe that implementation. MCP and REST call the same domain functions. Validate inputs in code. Tool descriptions must explain unknown fields and freshness limitations.
 
 ## Shared response envelope
 
@@ -12,8 +12,8 @@ Use structured errors: `INVALID_INPUT`, `TERM_UNAVAILABLE`, `SNAPSHOT_UNAVAILABL
 
 | Tool | Input | Output and bounds |
 |---|---|---|
-| `list_terms` | Optional `include_archived` | Available ingested terms and coverage; no inferred future offerings |
-| `search_courses` | `term_code`, `query`, optional program/units filters, cursor, limit | Summaries and next cursor; default 20, maximum 50 results; no full section dump |
+| `list_terms` | Optional `include_archived` | Available ingested terms and coverage; active/archive classification is not yet applied |
+| `search_courses` | `term_code`, `query`, optional program filter, cursor, limit | Summaries and next cursor; default 20, maximum 50 results; no full section dump |
 | `get_courses` | `term_code`, `course_codes[]`, optional `snapshot_version` | Descriptions, units, requirement structures, aliases, per-code found/not-found results; maximum 20 codes |
 | `get_sections` | `term_code`, `course_codes[]`, optional `snapshot_version`, cursor, limit | All section types, meetings, instructors, seat data, flags and raw link metadata; maximum 20 codes and 100 sections per page |
 | `validate_schedule` | `term_code`, `snapshot_version`, `requested_courses[]`, `section_ids[]`, `constraints` | Feasibility findings, overlaps, component checks, missing facts and unit totals; maximum 20 courses and 100 sections |
