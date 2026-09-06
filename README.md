@@ -2,7 +2,7 @@
 
 A shared USC course-data service that students can use through an MCP-compatible AI assistant and a companion Chrome extension.
 
-**Status: ingestion implemented and tested. Assistant interfaces and extension are under construction.**
+**Status: local backend and assistant tools implemented; companion extension under construction. Production deployment and provider-host onboarding are not complete.**
 
 ## Specification
 
@@ -40,3 +40,21 @@ By default, development uses PGlite (embedded PostgreSQL) in ignored `data/local
 `npm run import:snapshot -- /path/to/extracted-archive 20263` imports the earlier public-data archive without refetching USC. It requires `programs.json` and `programs/*.json` and uses preserved file timestamps as approximate observation times. Keep originals' timestamps when extracting. This is a historical import, not a fresh availability check.
 
 Ingestion is sequential and globally paced by a database request budget. It stages/validates a whole term, rejects missing pairs or unexpected coverage loss, and atomically publishes an immutable version. Unknown source dates and locations remain null. Course counts normalize scheduled identities across aliases and may differ from published-code counts.
+
+## Assistant tools
+
+```sh
+npm run dev
+# In another terminal:
+npm run smoke
+```
+
+The REST route is `POST http://127.0.0.1:3000/api/tools/<tool_name>`; the MCP endpoint is `http://127.0.0.1:3000/mcp`. Six tools share the same domain service. The MCP server advertises assistant instructions, an `usc://assistant/instructions` resource and a `plan-semester` prompt. Host instructions retain precedence.
+
+The local prototype binds only to loopback and checks Host/Origin. Do not expose it through a tunnel as a production service. OAuth, distributed client identity and production host onboarding remain outstanding. A hosted assistant cannot reach this loopback URL directly.
+
+To use a local stdio-capable assistant, configure a command equivalent to `npm --silent --prefix /absolute/path/to/repository run mcp:stdio`. It must use PostgreSQL if the HTTP service runs simultaneously; embedded development files support one process only. The stdio process serves tools but does not run refresh jobs: run the separate PostgreSQL worker for queued refreshes.
+
+`npm run smoke` uses the official MCP client to discover tools, retrieve CSCI104 and validate a section against the imported Fall 2026 snapshot. This verifies the protocol, not onboarding in ChatGPT, Claude or DeepSeek.
+
+Validation detects known weekly overlaps and hard time-block violations, but deliberately returns `indeterminate` for missing date ranges or unverified component/linking rules. It never certifies enrollment eligibility.

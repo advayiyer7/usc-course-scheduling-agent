@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsc && vite build --config apps/extension/vite.config.ts",
-    "dev": "tsx apps/api/src/main.ts",
-    "worker": "tsx apps/worker/src/main.ts",
-    "ingest": "tsx scripts/ingest.ts",
-    "import:snapshot": "tsx scripts/import-snapshot.ts",
-    "mcp:stdio": "tsx apps/api/src/stdio.ts",
+    "dev": "node --env-file-if-exists=.env --import=tsx apps/api/src/main.ts",
+    "worker": "node --env-file-if-exists=.env --import=tsx apps/worker/src/main.ts",
+    "ingest": "node --env-file-if-exists=.env --import=tsx scripts/ingest.ts",
+    "import:snapshot": "node --env-file-if-exists=.env --import=tsx scripts/import-snapshot.ts",
+    "mcp:stdio": "node --env-file-if-exists=.env --import=tsx apps/api/src/stdio.ts",
     "check": "npm run typecheck && npm test && npm run build",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "node --env-file-if-exists=.env --import=tsx scripts/smoke.ts",
+    "format": "prettier --write \"{apps,packages,scripts,tests}/**/*.{ts,tsx,css,json}\""
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",
@@ -35,6 +36,7 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
+    "prettier": "3.9.6",
     "tsx": "4.23.13",
     "typescript": "7.0.2",
     "vite": "8.2.2",
