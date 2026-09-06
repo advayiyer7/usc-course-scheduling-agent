@@ -2,7 +2,7 @@
 
 A shared USC course-data service that students can use through an MCP-compatible AI assistant and a companion Chrome extension.
 
-**Status: local pilot with a Codex native companion, extension side-panel chat, validated AI draft handoff, REST/MCP course tools, and scheduled semester caching. Account-authenticated inference, hosted deployment, consumer installers, and WebReg coursebin actions are not yet verified or released.**
+**Status: local pilot with user-tested Codex sign-in/chat, validated AI draft handoff, automatic planner review, official D-clearance guidance, REST/MCP course tools, and scheduled semester caching. Hosted deployment, consumer installers, and WebReg coursebin actions are not yet released.**
 
 [Run locally and load the extension](docs/local-setup.md).
 
@@ -22,7 +22,7 @@ The runtime prompt describes how a scheduling assistant should behave. The imple
 
 The primary workflow starts in extension chat: a student types a request such as “Fall 2026: CSCI 104, CSCI 270, EE 109, and one GE-D course.” The assistant finds the courses and section combinations and presents two or three schedule alternatives when enough suitable options exist. Manual course/section selection is optional editing, never a prerequisite for chatting. The intended next action is **Add to coursebin** on the chosen schedule: the extension operates in the student's logged-in WebReg session and reports the outcome, with checkout left to the student.
 
-The current companion accepts typed course requests and can display up to three AI-generated draft cards, with **Load into planner** as its implemented action. Signed-in inference still needs end-to-end verification. Source-backed GE-category discovery and WebReg coursebin interaction are not implemented. The backend supplies public data and deterministic validation; deterministic schedule optimization remains a later phase. See the [chat-to-coursebin acceptance workflow](docs/implementation-plan.md#chat-to-coursebin-acceptance-workflow) for the target behavior and remaining work.
+The current companion accepts typed course requests and can display up to three AI-generated draft cards, with **Load into planner** as its implemented action. The user has tested sign-in and chat; automated checks exercise the native protocol and proposal validation separately. Source-backed GE-category discovery and WebReg coursebin interaction are not implemented on main. The backend supplies public data and deterministic validation; deterministic schedule optimization remains a later phase. See the [chat-to-coursebin acceptance workflow](docs/implementation-plan.md#chat-to-coursebin-acceptance-workflow) for the target behavior and remaining work.
 
 The Chrome extension displays chat, preferences, saved course selections, and a weekly calendar. The local pilot calls the backend over loopback HTTP; a production deployment would require HTTPS and authentication. Native messaging connects only this extension to its locally installed companion. It does not automatically grant tools to arbitrary AI chat websites.
 
@@ -64,6 +64,8 @@ To use a local stdio-capable assistant, configure a command equivalent to `npm -
 `npm run smoke` uses the official MCP client to discover tools, retrieve CSCI104 and validate a section against the imported Fall 2026 snapshot. This verifies the protocol, not onboarding in ChatGPT, Claude or DeepSeek.
 
 Validation detects known weekly overlaps and hard time-block violations, but deliberately returns `indeterminate` for missing date ranges or unverified component/linking rules. It never certifies enrollment eligibility.
+
+Schedule cards and the planner show separate compatibility, required-component, seat and eligibility results. Planner edits automatically revalidate with cancellation of obsolete requests. D-clearance sections expose official instruction links with audience and review dates. The [clearance directory audit](docs/d-clearance.md) covers every Fall 2026 source program pair: 3,422 courses have researched department guidance, 1,214 have semester-directory fallbacks and one remains unresolved. No clearance requests are submitted.
 
 ## Companion verification
 

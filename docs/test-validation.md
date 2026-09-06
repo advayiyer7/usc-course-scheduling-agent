@@ -1,0 +1,13 @@
+# Test schedule review and D-clearance locally
+
+Use the existing [companion installation](companion-setup.md). The backend should be running with `npm run dev`. After rebuilding with `npm run build`, open Chrome's extension manager and reload USC Course Planner. Reopen the side panel and reconnect the companion. Reloading ends the current ephemeral chat; saved planner preferences and the companion's account profile persist.
+
+1. Start in **Chat with Codex** with an empty or existing planner. Type a Fall 2026 course request and ask for two or three candidates. Course selection in the planner is optional editing, not required first.
+2. Each returned card should show schedule compatibility, required components, seats, eligibility and expandable validation findings. Missing source dates/components should say **Needs verification**. This is expected; do not treat it as a complete registration check.
+3. To exercise clearance links, ask about **CSCI 426 for Fall 2026**. The archived section 30242 indicates D-clearance. Expand **D-clearance instructions** on its review and check the official Computer Science page, student audience and review date. The source flag can change; follow the current returned flag rather than relying permanently on this example.
+4. Click **Load into planner** on a candidate that has no known hard-constraint failure. Adjust a time preference or a section: **Checking…** should replace the old review automatically, then a new result should appear. If a selected class ends after 18:00, setting **Latest finish** to 18:00 should flag that class without clicking Check again. Clear the test limit afterwards.
+5. A service failure should show a validation error, never keep the old result as if it describes the changed selection. **Check again** retries against the same stored version. **Load latest** deliberately changes to the latest stored snapshot; neither button promises freshly fetched seats.
+
+For a browser-only UI check, visit `http://127.0.0.1:3000/app/` and use the optional planner editor. Native chat is available only in the extension. No WebReg mutation or clearance submission is part of these tests.
+
+Automated verification: `npm run check` uses source fixtures, covers date/identity/units boundaries, checks MCP/REST parity, rejects unsafe guidance URLs, tests escaped rendering, and verifies that cancelled or delayed validation requests cannot replace a newer result. The clearance coverage audit consumes the existing public archive without fetching USC. The local benchmark measures cached requests separately from production capacity.

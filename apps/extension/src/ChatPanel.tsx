@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { ScheduleReview } from "./ScheduleReview.js";
 import { z } from "zod";
 import {
   accountStatus,
@@ -378,6 +379,7 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
                 {d.validation.meta.stale ? " · stale snapshot" : ""}.
                 Eligibility is not established.
               </p>
+              <ScheduleReview value={d.validation.data} />
               <button
                 disabled={
                   !!loadingId ||
