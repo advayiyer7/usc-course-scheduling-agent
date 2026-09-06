@@ -19,6 +19,8 @@ Read-only inspection in the student's already authenticated Chrome session, thro
 
 ## Unknowns and fail-closed behavior
 
+A subsequent read-only same-origin GET verified that `/CourseBin` returns the same h3 and inline `display` status flags in server-rendered HTML; no scripts need executing to parse its minimal bin state. A GET of the already-observed `/Courses?Section=29903` verified the fragment `#courseBin_CSCI-104` and exact `disableAddCourseBin('29903')` / `handleAddCourseBin(xhr, status, '29903')` form callbacks. Only these public structural attributes were inspected, not hidden values.
+
 - Listing a multi-component course exposes separate lecture/lab/quiz add buttons, but no authoritative required-component or linking rule. This is **not** proof that an arbitrary combination is valid. The main validation task owns these rules; unresolved `component_rules` and failed/unknown `time_conflict` block execution.
 - Live success, actual new-row scheduled status, rejection bodies, D-clearance dialogs, partial completion, session expiry and an empty coursebin were not exercised. Synthetic fixtures test handling, not claims about unseen WebReg states. An unrecognized layout, status, form, error or response is reported as changed UI / unconfirmed and stops the run.
 - No use of registration or checkout is implemented. No automatic replacement schedule, removal, section substitution, grade change or semester switch is permitted.

@@ -2,6 +2,8 @@
 
 Authorized September 6, 2026: chat inside the Chrome extension using a student's own Codex access. This pilot adds a local native companion; it does not deploy a service, publish an extension, or implement coursebin/enrollment mutations.
 
+The subsequent [coursebin extension feature](coursebin.md) adds draft-specific student confirmation in the browser. It does not extend this native protocol with a mutation tool; passwords, cookies, tokens and existing WebReg records never pass through the companion. Live additions remain gated and unverified as documented there.
+
 ## Components
 
 Chrome's side panel sends a small validated command vocabulary to a single background native port. Chrome launches `edu.usc.course_planner`, restricted to the extension's fixed origin. The companion starts pinned, unmodified `@openai/codex` 0.153.4 using app-server over stdio. Chrome native frames and app-server JSON lines are distinct transports; neither endpoint exposes raw RPC forwarding to the extension or web pages.

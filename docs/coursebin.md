@@ -26,6 +26,8 @@ The adapter navigates the selected WebReg tab through exact-section lookups. Lea
 
 Preparation and execution both call `validate_schedule` using `protectConstraints`. Stale/mismatched snapshot metadata, missing/duplicate section identities, cancelled sections, known validation failures, and unresolved component rules block execution. Failed **or unknown** time conflicts block it; matching session IDs are not proof of date overlap.
 
+Freshness uses the shared envelope's `meta.stale`. That envelope reflects the full snapshot's oldest timestamp: a targeted program refresh can leave it stale even when selected sections have recent `checked_at` values. A targeted refresh or newly requested draft is therefore not guaranteed to clear this gate. The adapter does not override the shared freshness policy.
+
 Unknown dates with otherwise non-overlapping known times, personal eligibility, and D-clearance approval remain visible warnings, not claims of approval. Unknown future check codes block by default. Snapshot capacity is advisory until the exact WebReg row is inspected; `Closed` or an exhausted numeric capacity blocks that section. An R/D flag never establishes individual clearance.
 
 The main task owns validator changes and official clearance guidance. This adapter does not infer component/link-code semantics, solve a new schedule, request clearance, or silently substitute sections. Existing coursebin entries are preserved; their compatibility with the new draft is not certified by the public-data validator.

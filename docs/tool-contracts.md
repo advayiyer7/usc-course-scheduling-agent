@@ -38,6 +38,12 @@ A missing lab rule, unknown meeting time, or incomplete relevant dataset prevent
 
 Weekly overlaps with missing actual dates produce an unknown `time_conflict`, even when session codes match. A confirmed conflict requires valid overlapping dates with a shared actual weekday. Missing requested records prevent partial unit totals being presented as a complete total. Full seats and D-clearance do not by themselves create a modeled time conflict.
 
+## Browser-only coursebin contract
+
+`packages/contracts/src/coursebin.ts` defines strict extension messages: `prepare` accepts one proposal plus current planning constraints; `execute` accepts only the single-use review ticket; `cancel` and `status` contain no action payload. Only the actual extension side panel can send them. These messages are not REST, MCP or native-companion tools. No message accepts JavaScript, arbitrary URLs, selectors or endpoint names.
+
+Per-section reports carry `added`, `already_present`, `failed` or `unconfirmed`, with bounded failure codes and the proposal/semester/snapshot identity. Only selected-section outcomes may be sent to chat. Authenticated page state and unrelated bin entries stay in the browser. See [coursebin execution policy and integration](coursebin.md), including current required-component, freshness and live-verification gates.
+
 ## Future tool, not in the initial contract
 
 The authorized local Codex companion adds `present_schedule` as a client-side dynamic tool, not a new REST/MCP endpoint. It accepts `validate_schedule` inputs plus a bounded title, enforces the planner's current hard constraints, invokes the existing validator, and returns a draft card with the validation envelope. Loading a card requires a student click and another validation against current planner constraints. Neither operation touches WebReg.
