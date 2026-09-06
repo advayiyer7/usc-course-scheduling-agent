@@ -4,6 +4,8 @@ import {
   configuredSource,
 } from "../../../packages/db/src/config.js";
 import { runOneJob } from "./ingest.js";
+import { runScheduledRefresh, scheduledPolicy } from "./schedule.js";
+const refreshPolicy = scheduledPolicy();
 if (!process.env.DATABASE_URL)
   throw new Error(
     "A separate worker requires DATABASE_URL. Embedded development runs a worker in the API process.",
@@ -20,6 +22,7 @@ process.on("SIGTERM", () => {
 try {
   while (!stopped) {
     try {
+      await runScheduledRefresh(store, source, refreshPolicy);
       await runOneJob(store, source);
     } catch (e) {
       console.error(e instanceof Error ? e.message : "Worker failed");

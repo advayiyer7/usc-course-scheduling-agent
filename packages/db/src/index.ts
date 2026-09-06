@@ -99,6 +99,7 @@ const migrations = [
   `INSERT INTO worker_lease(id) VALUES (1) ON CONFLICT DO NOTHING`,
   `CREATE TABLE IF NOT EXISTS upstream_budget (id integer PRIMARY KEY, next_at bigint NOT NULL DEFAULT 0)`,
   `INSERT INTO upstream_budget(id) VALUES (1) ON CONFLICT DO NOTHING`,
+  `CREATE TABLE IF NOT EXISTS refresh_schedules (term integer PRIMARY KEY, next_at bigint NOT NULL, failures integer NOT NULL DEFAULT 0, last_attempt_at text, last_success_at text, last_error text)`,
   `INSERT INTO schema_versions(version) VALUES (1) ON CONFLICT DO NOTHING`,
 ];
 export async function migrate(db: Database) {

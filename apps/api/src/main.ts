@@ -5,6 +5,11 @@ import {
 import { CourseService } from "../../../packages/domain/src/service.js";
 import { createApp } from "./http.js";
 import { runOneJob } from "../../worker/src/ingest.js";
+import {
+  runScheduledRefresh,
+  scheduledPolicy,
+} from "../../worker/src/schedule.js";
+const refreshPolicy = scheduledPolicy();
 const host = process.env.HOST ?? "127.0.0.1";
 if (host !== "127.0.0.1")
   throw new Error(
@@ -29,6 +34,7 @@ const timer = !process.env.DATABASE_URL
       if (busy) return;
       busy = true;
       try {
+        await runScheduledRefresh(store, source, refreshPolicy);
         await runOneJob(store, source);
       } catch (e) {
         console.error(e instanceof Error ? e.message : "Refresh failed");

@@ -31,22 +31,29 @@ export async function withLease<T>(
 }
 export async function ingest(store: Store, source: UscClient, term: number) {
   return withLease(store, async (owner) => {
-    const base = await store.current(term);
-    const programs = await source.programs(term);
-    const pairs = [
-      ...new Set(
-        programs.flatMap((p) =>
-          p.schools.map((s) => `${s.prefix}/${p.prefix}`),
-        ),
-      ),
-    ];
-    const responses = [];
-    for (const pair of pairs) {
-      const [school, program] = pair.split("/");
-      responses.push(await source.program(term, school!, program!));
-    }
-    return store.publish(term, programs, responses, base?.id, owner);
+    return refreshTerm(store, source, term, owner);
   });
+}
+// Caller must hold the shared worker lease.
+export async function refreshTerm(
+  store: Store,
+  source: UscClient,
+  term: number,
+  owner: string,
+) {
+  const base = await store.current(term);
+  const programs = await source.programs(term);
+  const pairs = [
+    ...new Set(
+      programs.flatMap((p) => p.schools.map((s) => `${s.prefix}/${p.prefix}`)),
+    ),
+  ];
+  const responses = [];
+  for (const pair of pairs) {
+    const [school, program] = pair.split("/");
+    responses.push(await source.program(term, school!, program!));
+  }
+  return store.publish(term, programs, responses, base?.id, owner);
 }
 export async function runOneJob(store: Store, source: UscClient) {
   return withLease(store, async (owner) => {
