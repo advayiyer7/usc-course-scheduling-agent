@@ -10,3 +10,5 @@ coverage/
 data/raw/
 *.sqlite
 *.sqlite3
+data/
+work/

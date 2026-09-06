@@ -1,6 +1,6 @@
 # Phased delivery plan
 
-This is a backlog. The current repository contains design documents only. Each phase can span several coherent commits; commit after relevant checks pass.
+This is a backlog. Implementation progress is recorded in README.md and docs/progress.md. Each phase can span several coherent commits; commit after relevant checks pass.
 
 ## Phase 1 — contracts and public-data ingestion
 

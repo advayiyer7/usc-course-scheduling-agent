@@ -1,0 +1,4 @@
+{
+  "compilerOptions": {"target":"ES2023","module":"NodeNext","moduleResolution":"NodeNext","strict":true,"noUncheckedIndexedAccess":true,"esModuleInterop":true,"skipLibCheck":true,"jsx":"react-jsx","outDir":"dist","rootDir":".","types":["node","chrome"]},
+  "include":["apps/**/*.ts","apps/**/*.tsx","packages/**/*.ts","scripts/**/*.ts","tests/**/*.ts"],"exclude":["dist","node_modules"]
+}

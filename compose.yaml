@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:18.3
+    environment:
+      POSTGRES_USER: usc
+      POSTGRES_PASSWORD: usc
+      POSTGRES_DB: usc
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U usc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  pgdata:
