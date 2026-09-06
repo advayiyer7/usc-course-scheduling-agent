@@ -1,0 +1,43 @@
+.coursebin-action {
+  margin-top: 12px;
+}
+.proposal-card > .coursebin-action {
+  display: block;
+}
+.coursebin-action > button {
+  margin: 0 8px 8px 0;
+}
+.coursebin-review {
+  border: 1px solid #d7b578;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fffaf1;
+  margin-top: 8px;
+}
+.coursebin-review h4 {
+  margin: 8px 0;
+}
+.coursebin-review ul,
+.coursebin-result ul {
+  padding-left: 20px;
+}
+.coursebin-review li,
+.coursebin-result li {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.coursebin-review li span,
+.coursebin-result li span {
+  display: block;
+  font-size: 12px;
+}
+.coursebin-review button {
+  margin: 4px 4px 4px 0;
+}
+.coursebin-result pre {
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}

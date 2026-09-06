@@ -8,9 +8,20 @@ import {
   type Proposal,
 } from "../../../packages/contracts/src/companion.js";
 import { CompanionClient } from "./companion-client.js";
+import {
+  CoursebinAction,
+  CoursebinLog,
+  CoursebinResult,
+} from "./coursebin/CoursebinAction.js";
+import type { CoursebinReport } from "../../../packages/contracts/src/coursebin.js";
 import "./chat.css";
 
-type Message = { id: string; role: "student" | "assistant"; text: string };
+type Message = {
+  id: string;
+  role: "student" | "assistant";
+  text: string;
+  report?: CoursebinReport;
+};
 interface Props {
   context: z.infer<typeof planningContext>;
   onLoad: (proposal: Proposal) => Promise<void>;
@@ -35,6 +46,9 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
     [activity, setActivity] = useState(""),
     [loginUrl, setLoginUrl] = useState("");
   const [loadingId, setLoadingId] = useState("");
+  const [coursebinBusy, setCoursebinBusy] = useState(false);
+  const [coursebinRunning, setCoursebinRunning] = useState(false);
+  const [coursebinReviewOwner, setCoursebinReviewOwner] = useState("");
   const end = useRef<HTMLDivElement>(null);
   const mounted = useRef(true);
   useEffect(() => {
@@ -170,13 +184,33 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
       setActionBusy(false);
     }
   }
-  async function send(suggestion = false) {
+  function showCoursebinReport(report: CoursebinReport) {
+    setMessages((old) => {
+      const message: Message = {
+        id: `coursebin-${report.run_id}`,
+        role: "assistant",
+        text: "",
+        report,
+      };
+      const found = old.find((m) => m.id === message.id);
+      if (found && JSON.stringify(found.report) === JSON.stringify(report))
+        return old;
+      return (
+        found
+          ? old.map((m) => (m.id === message.id ? message : m))
+          : [...old, message]
+      ).slice(-50);
+    });
+  }
+  async function send(suggestion = false, explicitPrompt?: string) {
     const c = client.current;
     if (!c || busy || actionBusy || !status?.authenticated) return;
-    const prompt = suggestion
-      ? text.trim() ||
-        "Use my selected courses and preferences to suggest up to three schedules. Ask for missing information first. Use present_schedule to show validated drafts."
-      : text.trim();
+    const prompt =
+      explicitPrompt ??
+      (suggestion
+        ? text.trim() ||
+          "Use my selected courses and preferences to suggest up to three schedules. Ask for missing information first. Use present_schedule to show validated drafts."
+        : text.trim());
     if (!prompt) return;
     const parsed = planningContext.safeParse({ ...context, major });
     if (!parsed.success) {
@@ -215,6 +249,10 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
   }
   return (
     <section className="chat-panel" aria-label="Codex scheduling assistant">
+      <CoursebinLog
+        onReport={showCoursebinReport}
+        onBusy={setCoursebinRunning}
+      />
       <div className="chat-heading">
         <div>
           <p className="eyebrow">YOUR CODEX · YOUR COURSES</p>
@@ -231,8 +269,8 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
         </span>
       </div>
       <p className="chat-explainer">
-        Chat here with your own Codex access. Compare drafts, then load one into
-        your calendar.
+        Chat here with your own Codex access. Compare drafts, then add one
+        directly to your WebReg coursebin.
       </p>
       <label className="major-field">
         Your major{" "}
@@ -343,8 +381,38 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
         )}
         {messages.map((m) => (
           <div key={m.id} className={`chat-message ${m.role}`}>
-            <b>{m.role === "student" ? "You" : "Course assistant"}</b>
-            <p>{m.text}</p>
+            <b>
+              {m.report
+                ? "WebReg coursebin result"
+                : m.role === "student"
+                  ? "You"
+                  : "Course assistant"}
+            </b>
+            {m.report ? (
+              <>
+                <CoursebinResult report={m.report} />
+                {m.report.phase !== "running" &&
+                  m.report.sections.some(
+                    (s) => s.status === "failed" || s.status === "unconfirmed",
+                  ) && (
+                    <button
+                      type="button"
+                      className="outline"
+                      disabled={!status?.authenticated || busy || actionBusy}
+                      onClick={() =>
+                        void send(
+                          false,
+                          `Review these structured coursebin results. Each section tuple is [id, status, failure_code]. For unconfirmed sections, ask me to inspect WebReg first. Propose alternatives for failed sections using present_schedule; do not apply replacements. Browser result: ${JSON.stringify({ term_code: m.report?.term_code, proposal_id: m.report?.proposal_id, sections: m.report?.sections.map((s) => [s.section_id, s.status, s.code ?? null]) })}`,
+                        )
+                      }
+                    >
+                      Ask companion for alternatives
+                    </button>
+                  )}
+              </>
+            ) : (
+              <p>{m.text}</p>
+            )}
           </div>
         ))}
         {activity && (
@@ -380,6 +448,8 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
               </p>
               <button
                 disabled={
+                  coursebinBusy ||
+                  coursebinRunning ||
                   !!loadingId ||
                   plannerBusy ||
                   busy ||
@@ -389,6 +459,15 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
               >
                 {loadingId === d.id ? "Loading…" : "Load into planner"}
               </button>
+              <CoursebinAction
+                draft={d}
+                context={{ ...context, major }}
+                disabled={busy || coursebinBusy || coursebinRunning}
+                onBusy={setCoursebinBusy}
+                onReport={showCoursebinReport}
+                reviewOwner={coursebinReviewOwner}
+                onReview={setCoursebinReviewOwner}
+              />
             </article>
           ))}
         </div>
@@ -448,8 +527,9 @@ export function ChatPanel({ context, onLoad, plannerBusy }: Props) {
         stays open. Keep USC passwords and student records out of chat.
       </p>
       <p className="chat-note">
-        Pilot: AI proposals with deterministic validation. Coursebin additions
-        and registration are not available yet.
+        Coursebin additions require a draft-specific review and confirmation.
+        Unresolved component rules block addition. Complete registration
+        yourself in WebReg.
       </p>
     </section>
   );
