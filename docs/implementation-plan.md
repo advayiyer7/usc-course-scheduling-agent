@@ -32,7 +32,11 @@ Add metrics, operating documentation, load tests and a deployment proposal. Vali
 
 Acceptance: publish measured throughput and latency, database/resource use, upstream request volume and failure behavior. Document recovery, snapshot rollback, source schema changes and the tested assistant-host matrix.
 
-## Later decisions
+## Authorized Codex companion pilot — September 6, 2026
+
+Build a local companion using official Codex app-server, with student-managed ChatGPT sign-in, extension side-panel chat, bounded course tools and validated proposal handoff to the calendar. Commit transport/runtime and tested UI/install milestones separately. See [companion architecture](companion-architecture.md). Test signed-out real runtime startup separately from authenticated inference. USC Edu membership is not proof of Codex entitlement. Coursebin interaction follows a separate authenticated WebReg investigation; no registration automation in this milestone.
+
+## Remaining later decisions
 
 - Deterministic top-k schedule generation after validation is trustworthy.
 - Student-authorized account sync if needed, with a separate data-access design.

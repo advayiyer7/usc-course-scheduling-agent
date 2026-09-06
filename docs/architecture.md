@@ -100,6 +100,8 @@ Later, a bounded solver can produce top-ranked valid alternatives from hard cons
 
 ## Extension and provider compatibility
 
+September 6, 2026 scope update: the user authorized a Codex-based native companion pilot for chat inside the extension. [Companion architecture](companion-architecture.md) defines that additional local runtime and its limits; the provider-API chat idea below remains deferred. This pilot reuses the existing MCP/REST domain behavior and does not imply a hosted release or WebReg mutations.
+
 The extension calls REST; supported assistant applications call remote MCP. Installing the extension does not install a system prompt or MCP connection in unrelated websites. Publish a tested host/version/plan matrix and setup guide. Do not promise universal AI compatibility.
 
 For unsupported hosts, export a compact selected-course package with source timestamps for the student to attach manually; exported data cannot execute tools or refresh itself. Do not ship brittle automation that injects messages into every AI website in the first release.

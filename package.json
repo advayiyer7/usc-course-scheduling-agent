@@ -20,11 +20,13 @@
     "smoke": "node --env-file-if-exists=.env --import=tsx scripts/smoke.ts",
     "format": "prettier --write \"{apps,packages,scripts,tests}/**/*.{ts,tsx,css,json}\"",
     "benchmark": "node --env-file-if-exists=.env --import=tsx scripts/benchmark.ts",
-    "smoke:stdio": "node --env-file-if-exists=.env --import=tsx scripts/smoke-stdio.ts"
+    "smoke:stdio": "node --env-file-if-exists=.env --import=tsx scripts/smoke-stdio.ts",
+    "smoke:companion": "node --import=tsx scripts/smoke-companion.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",
     "@modelcontextprotocol/sdk": "1.30.0",
+    "@openai/codex": "0.153.4",
     "express": "5.2.1",
     "pg": "8.23.0",
     "react": "19.2.8",
