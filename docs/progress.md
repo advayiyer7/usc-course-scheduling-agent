@@ -41,6 +41,18 @@ Hosted verification completed successfully: [GitHub Actions run 34061412965](htt
 
 - Local prototype only: no public deployment, OAuth onboarding or extension-store release.
 - Required component/linking rules and actual meeting dates remain unknown; the validator reports this and does not certify a complete schedule.
-- Assistant applications have not been configured; tested integrations are official MCP clients over HTTP and stdio.
-- Full-semester timed refresh scheduling and snapshot retention are operational follow-ups; user-requested refresh jobs work now.
+- Codex companion startup and official sign-in initiation/cancellation are verified; account-authenticated chat still requires an interactive check.
+- Full-semester timed refresh scheduling is implemented below. Snapshot retention remains an operational follow-up.
 - PGlite is single-process development storage. Use PostgreSQL for simultaneous HTTP, worker and stdio processes.
+
+## Codex companion pilot — September 6, 2026
+
+- `3eff7f9`: pinned Codex 0.153.4, isolated account profile, native frame/RPC boundaries, constrained scheduling tool bridge and validated proposal events. Initial milestone passed 35 tests and a real signed-out runtime/config/thread smoke test.
+- `958af67`: integrated per-user macOS/Linux installer from the parallel task; 18 installer tests cover ownership, symlinks, quoting, reinstall and uninstall. Installed the real stable-Chrome registration and launcher on this macOS machine.
+- `312e649`: integrated durable daily semester refresh scheduling; six fixture-backed tests cover instructor updates, partial source failures, multiple schedulers and targeted-refresh races. No live bulk USC fetch was needed for tests.
+- `c67e160`: side-panel Codex chat, official sign-in link, account state, Stop/New chat/Sign out, local major preference and validated draft loading. Browser preview verified at desktop and 420-pixel widths; existing CSCI104 selections and conservative validation survive switching between chat and planner.
+- `8603c16`: seven independently reproduced cancellation-race regressions. Late cancelled tool calls/messages/completions cannot affect the next response; old Stop completion cannot clear a newer response's busy state. Draft loading revalidates against current required courses, hard constraints and preferences, and rejects another semester.
+- Combined local verification: `npm run check` passed 72 tests across 11 files, TypeScript and the production extension build. `npm run smoke:companion` passed against the actual pinned executable. `npm run smoke:native` passed using the installed launcher: Chrome framing, account/read, official sign-in URL and cancellation. No authentication completed or model inference was performed during these tests.
+- The native-host registration is installed. The Chrome file chooser did not complete loading the unpacked extension during automation; interactive extension/account onboarding remains to be finished by the user. This is separate from the successful native-launcher protocol checks.
+- USC ITS sources state ChatGPT Edu is available to active affiliates, while Codex requires an access request and department approval. Onboarding reports this; no free/universal Codex entitlement claim.
+- Still outside this pilot: WebReg account access and coursebin/enrollment mutations, a deterministic optimizer, Claude support, hosted production service, signed consumer installers, Windows and extension-store publication.
