@@ -88,7 +88,7 @@ export function ChatPanel({
   useEffect(() => {
     shelf.current.setContext(draftKey);
     setDrafts([]);
-    if (currentTurn.current && currentTurn.current.key !== contextKey) {
+    if (currentTurn.current) {
       currentTurn.current.valid = false;
       if (currentTurn.current.running)
         void client.current

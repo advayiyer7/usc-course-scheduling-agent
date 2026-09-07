@@ -387,3 +387,37 @@ it("keeps recovery Stop outside both tabs when a coursebin run is active", async
     expect.objectContaining({ method: "cancel" }),
   );
 });
+
+it("retires an in-flight request even when edits return to the same context", async () => {
+  await act(async () =>
+    root.render(
+      React.createElement(ChatPanel, {
+        context,
+        onLoad,
+        plannerBusy: false,
+        plannerRevision: 0,
+      }),
+    ),
+  );
+  await click("Generate plans");
+  const prior = generation();
+  await act(async () =>
+    root.render(
+      React.createElement(ChatPanel, {
+        context,
+        onLoad,
+        plannerBusy: false,
+        plannerRevision: 1,
+      }),
+    ),
+  );
+  await emit({
+    type: "message",
+    id: "late",
+    text: "Retired response",
+    complete: true,
+  });
+  await show(1, prior);
+  expect(container.textContent).not.toContain("Retired response");
+  expect(cards()).toHaveLength(0);
+});
