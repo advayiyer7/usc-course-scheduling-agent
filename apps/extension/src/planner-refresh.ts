@@ -42,6 +42,6 @@ export async function refreshExactSelection<
       });
   }
   throw new Error(
-    "The refresh is still queued or running. Your exact sections are unchanged. Try Refresh data and recheck again after the worker finishes.",
+    "Fresh data was not available within the wait. The refresh may still be pending or may have failed. Your exact sections are unchanged. Try Refresh data and recheck again.",
   );
 }

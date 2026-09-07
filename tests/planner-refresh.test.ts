@@ -42,7 +42,7 @@ it("reports an unfinished refresh after bounded polling, not a fresh snapshot", 
     readLatest: latest,
     signal: new AbortController().signal,
   });
-  const rejected = expect(result).rejects.toThrow("still queued or running");
+  const rejected = expect(result).rejects.toThrow("may still be pending or may have failed");
   await vi.advanceTimersByTimeAsync(60000);
   await rejected;
   expect(latest).toHaveBeenCalledTimes(12);
