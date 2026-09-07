@@ -3,13 +3,10 @@ import { inputs } from "../../contracts/src/index.js";
 import type { z } from "zod";
 import { validationReview } from "../../contracts/src/review.js";
 import { clearanceForSection } from "./clearance.js";
+import { checkComponents } from "./components.js";
+import type { ValidationCheck } from "../../contracts/src/review.js";
 type Request = z.infer<typeof inputs.validate_schedule>;
-export interface Check {
-  code: string;
-  status: "pass" | "fail" | "unknown";
-  message: string;
-  section_ids?: string[];
-}
+export type Check = ValidationCheck;
 const intersects = (a: string[], b: string[]) => a.some((d) => b.includes(d));
 const dayNumbers = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const timed = (m: Meeting) =>
@@ -99,12 +96,13 @@ export function validate(
     const chosen = selected.filter((s) => s.course_key === c.key);
     if (!chosen.length)
       add("course_coverage", "fail", `${c.code} has no selected section.`);
-    // Until official linking semantics are verified, even a plausible combination is not certified.
-    add(
-      "component_rules",
-      "unknown",
-      `Required component and link rules for ${c.code} are not yet verified.`,
-      chosen.map((s) => s.id),
+    checks.push(
+      checkComponents(
+        request.term_code,
+        c,
+        sections.filter((s) => s.course_key === c.key),
+        chosen,
+      ),
     );
   }
   for (const s of selected) {

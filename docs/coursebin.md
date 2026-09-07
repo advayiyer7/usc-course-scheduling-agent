@@ -1,6 +1,6 @@
 # Student-triggered Add to coursebin
 
-This branch implements draft-specific confirmation and a bounded WebReg adapter. **Live addition is not yet verified or release-ready:** the current validator cannot verify required component/linking rules, so current proposals remain blocked. Empty-coursebin markup is also unverified and fails closed. No live add or registration action was performed during development.
+This branch implements draft-specific confirmation and a bounded WebReg adapter. **Live addition is not yet verified or release-ready:** the validator verifies only the [reviewed Fall 2026 unlinked profiles](component-validation.md), and all remaining preparation findings must be resolved. Empty-coursebin markup is also unverified and fails closed. No live add or registration action was performed during development.
 
 ## Student flow
 
@@ -46,7 +46,7 @@ See [the read-only observation record](webreg-observations.md) for exact UI evid
 
 Sanitized tests cover the DOM parser, original-button click path, sender boundary, strict commands, one-time tickets, duplicate concurrency, preservation, wrong semesters, full/clearance/rejection feedback, partial completion, lost acknowledgements, late presence, interrupted workers, cancellation races, stale proposals, and exact-selection UI confirmation. The real React action was also reviewed in a local browser fixture at a 400-pixel card width; confirmation produced mock partial/unconfirmed results. Fixtures have no WebReg connection or student records.
 
-Still unverified live: actual addition and its new-row scheduled flag, empty bins, required-component rules, D-clearance/server rejection dialogs, session-expiry behavior and partial mutation outcomes. Unknown UI states stop safely. The current validator reports `component_rules: unknown` for all source courses; this is a real gate, not a tested successful-add claim. A live test requires both authoritative component evidence and the student choosing and explicitly authorizing a concrete schedule. Never disable the gate or register a student to complete a test.
+Still unverified live: actual addition and its new-row scheduled flag, empty bins, required-component rules, D-clearance/server rejection dialogs, session-expiry behavior and partial mutation outcomes. Unknown UI states stop safely. The validator can pass the reviewed Fall 2026 EE109, CSCI426 and SSCI165 profiles after a refresh preserves complete inventory/notes evidence. Other configurations remain unknown; this is a real gate, not a tested successful-add claim. A live test requires both authoritative component evidence and the student choosing and explicitly authorizing a concrete schedule. Never disable the gate or register a student to complete a test.
 
 ## Integration
 

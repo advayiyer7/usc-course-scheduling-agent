@@ -162,6 +162,7 @@ export interface Section {
   session_code: string | null;
   syllabus_url: string | null;
   checked_at: string;
+  registration_notes?: string | null;
 }
 export interface Course {
   key: string;
@@ -176,6 +177,9 @@ export interface Course {
   sections: Section[];
   programs: string[];
   checked_at: string;
+  // Absent on legacy normalized snapshots; absence is not an empty instruction.
+  registration_notes?: { course: string | null; term: string | null };
+  section_ids?: string[];
 }
 export interface SourceResponse {
   school: string;

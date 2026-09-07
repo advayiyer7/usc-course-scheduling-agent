@@ -79,6 +79,24 @@ export function ScheduleReview({ value }: { value: unknown }) {
               <div>
                 <b className="sr-only">{labels[check.status]}: </b>
                 {check.message}
+                {check.evidence && (
+                  <small>
+                    {" "}
+                    Rules reviewed {check.evidence.verified_on}:{" "}
+                    {check.evidence.sources.map((source, index) => (
+                      <React.Fragment key={source.url}>
+                        {index > 0 && " · "}
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {source.title} ↗
+                        </a>
+                      </React.Fragment>
+                    ))}
+                  </small>
+                )}
               </div>
             </li>
           ))}

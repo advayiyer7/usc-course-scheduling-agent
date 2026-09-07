@@ -92,7 +92,7 @@ Illustrative test workload: 10,000 users × 12 calls over an hour is approximate
 
 ## Scheduling correctness
 
-The first release allows an assistant to propose section IDs and calls backend validation. The validator checks overlapping known meetings, missing data, cancelled sections, course coverage, unit accounting and user-defined time blocks. Required component/link-code semantics must be researched and verified before the validator claims completeness. A generic matching link code alone is not proof of registration validity.
+The first release allows an assistant to propose section IDs and calls backend validation. The validator checks overlapping known meetings, missing data, cancelled sections, course coverage, unit accounting and user-defined time blocks. Fall 2026 EE109, CSCI426 and SSCI165 have [narrowly verified unlinked component profiles](component-validation.md), guarded by full inventory, notes, session and type evidence. Other component configurations remain unknown. A generic matching link code alone is not proof of registration validity.
 
 Unknown times, incomplete component rules or unavailable eligibility produce `indeterminate` findings. Time compatibility never establishes student enrollment eligibility. Availability is a snapshot and reserves nothing. Handle date ranges, daylight saving, cross-listed duplicates and lecture/lab/quiz combinations explicitly. Add campus-travel constraints only when trustworthy location data becomes available.
 

@@ -59,7 +59,7 @@ Architecture's candidate D-clearance page could not be retrieved during this che
 
 Every candidate is checked by deterministic code before the companion emits its card. The review separates modeled compatibility, required components, snapshot seats and personal eligibility. Missing/invalid dates, missing meeting times, unresolved identities and variable units remain unknown. A matching USC session code is not proof that meetings share actual dates. Confirmed conflicts require an overlapping date range containing an actual shared meeting weekday; potential weekly overlaps with unknown dates remain unresolved conflicts.
 
-Required lecture/lab/discussion/quiz linking semantics remain unverified and keep component checks indeterminate. Do not bypass those checks based on a plausible-looking selection. Clearance links help the student follow USC's process; they do not submit requests or establish coursebin/registration readiness.
+Required component checks can pass for the [reviewed Fall 2026 unlinked pilot profiles](component-validation.md). Other lecture/lab/discussion/quiz configurations remain unverified. Do not bypass those checks based on a plausible-looking selection. Clearance links help the student follow USC's process; they do not submit requests or establish coursebin/registration readiness.
 
 ## Routed official sources
 

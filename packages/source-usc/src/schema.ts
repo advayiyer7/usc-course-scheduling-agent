@@ -39,6 +39,7 @@ export const sourceSection = z
       .passthrough()
       .nullable(),
     syllabus: nullableText,
+    notes: nullableText.optional(),
   })
   .passthrough();
 export const sourceCourse = z
@@ -57,6 +58,8 @@ export const sourceCourse = z
     courseRestrictions: z.unknown(),
     majorRestrictions: z.unknown(),
     schoolRestrictions: z.unknown(),
+    courseNotes: nullableText.optional(),
+    termNotes: nullableText.optional(),
   })
   .passthrough();
 export const responseSchema = z
@@ -138,6 +141,7 @@ export function normalize(term: number, responses: SourceResponse[]): Course[] {
           session_code: s.session?.rnrSessionCode ?? null,
           syllabus_url: s.syllabus,
           checked_at: response.checked_at,
+          registration_notes: s.notes,
         };
       });
       const aliases = [
@@ -146,7 +150,18 @@ export function normalize(term: number, responses: SourceResponse[]): Course[] {
         key,
       ];
       const existing = courses.get(key);
+      const registrationNotes =
+        c.courseNotes !== undefined && c.termNotes !== undefined
+          ? { course: c.courseNotes, term: c.termNotes }
+          : undefined;
       if (existing) {
+        // Cross-list instructions must agree. Do not erase a restriction by
+        // selecting whichever program happened to be visited first.
+        if (
+          JSON.stringify(existing.registration_notes) !==
+          JSON.stringify(registrationNotes)
+        )
+          existing.registration_notes = undefined;
         existing.aliases = [...new Set([...existing.aliases, ...aliases])];
         existing.programs = [
           ...new Set([
@@ -183,6 +198,7 @@ export function normalize(term: number, responses: SourceResponse[]): Course[] {
           sections,
           programs: [`${response.school}/${response.program}`],
           checked_at: response.checked_at,
+          registration_notes: registrationNotes,
         });
     }
   }
@@ -194,5 +210,8 @@ export function normalize(term: number, responses: SourceResponse[]): Course[] {
         throw new Error(`Conflicting section identity ${s.id}`);
       owners.set(s.id, c.key);
     }
-  return [...courses.values()];
+  return [...courses.values()].map((c) => ({
+    ...c,
+    section_ids: c.sections.map((s) => s.id).sort(),
+  }));
 }

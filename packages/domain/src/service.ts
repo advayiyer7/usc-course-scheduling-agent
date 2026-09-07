@@ -70,7 +70,7 @@ export class CourseService {
             ]
           : []),
         "Coverage is the public catalog, not personal eligibility.",
-        "Locations, component rules and meeting date ranges are not verified.",
+        "Locations and meeting date ranges are not verified. Component coverage depends on the course's validation finding.",
         "Syllabus URLs are not confirmed available documents.",
       ],
     };

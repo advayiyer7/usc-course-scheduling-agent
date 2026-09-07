@@ -55,6 +55,18 @@ export const sectionClearance = z
   })
   .strict();
 export const checkStatus = z.enum(["pass", "fail", "unknown"]);
+export const checkEvidence = z
+  .object({
+    policy_version: z.string().max(100),
+    verified_on: z.iso.date(),
+    sources: z
+      .array(
+        z.object({ title: z.string().max(100), url: officialUscUrl }).strict(),
+      )
+      .min(1)
+      .max(3),
+  })
+  .strict();
 export const validationCheck = z.object({
   code: z.string().max(100),
   status: checkStatus,
@@ -63,6 +75,7 @@ export const validationCheck = z.object({
     .array(z.string().regex(/^\d{5}$/))
     .max(100)
     .optional(),
+  evidence: checkEvidence.optional(),
 });
 export const reviewSummary = z
   .object({
@@ -99,3 +112,4 @@ export const validationReview = z
 export type ClearanceGuidance = z.infer<typeof clearanceGuidance>;
 export type ClearanceRoute = z.infer<typeof clearanceRoute>;
 export type ValidationReview = z.infer<typeof validationReview>;
+export type ValidationCheck = z.infer<typeof validationCheck>;

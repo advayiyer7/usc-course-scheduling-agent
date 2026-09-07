@@ -61,7 +61,7 @@ npm run smoke
 
 `smoke` requires the backend and an imported Fall 2026 semester. The UI supports search, course selection, section selection, hard time limits, unavailable blocks, soft free-day preferences, deterministic validation, local persistence, JSON export and refresh requests. The prototype does not generate optimal schedules automatically; the connected assistant proposes combinations and the validator checks them.
 
-All schedules remain indeterminate for complete registration validity until required component/linking rules and date ranges are verified. Known conflicts are still reported. Full sections and personal eligibility are separate from time compatibility.
+Component checks can pass for the [reviewed Fall 2026 pilot profiles](component-validation.md) after refresh; other configurations remain unknown. Missing dates can still leave schedule compatibility indeterminate. Known conflicts are still reported. Full sections and personal eligibility are separate from time compatibility.
 
 ## Reliability and benchmark commands
 
