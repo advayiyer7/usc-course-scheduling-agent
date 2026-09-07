@@ -102,7 +102,13 @@ export function CoursebinAction({
         setPreview(value.preview);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not inspect WebReg.");
+      setError(
+        e instanceof CoursebinError && e.code === "STALE_PROPOSAL"
+          ? "This course data is stale. Use Refresh data and recheck in My planner, then review the same sections again."
+          : e instanceof Error
+            ? e.message
+            : "Could not inspect WebReg.",
+      );
     } finally {
       setPhase("idle");
       onBusy(false);
