@@ -112,6 +112,8 @@ Store student preferences locally in the extension initially. Public catalog acc
 
 ## Evidence and unresolved decisions
 
+The [WebReg authentication feasibility investigation](webreg-auth-feasibility.md) records verified authenticated HTTP reads, the observed federated login/cookie flow and the remaining session-portability tests. This research does not implement hosted account access or registration and does not change the current browser-only credential boundary.
+
 - [USC Fall 2026 catalog](https://classes.usc.edu/term/20263/catalogue/school)
 - [MCP remote server guidance](https://modelcontextprotocol.io/registry/remote-servers)
 - [ChatGPT MCP setup](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt-beta)
