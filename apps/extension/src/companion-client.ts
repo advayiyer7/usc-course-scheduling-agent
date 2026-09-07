@@ -3,6 +3,11 @@ import {
   type CompanionEvent,
   type CompanionRequest,
 } from "../../../packages/contracts/src/companion.js";
+import {
+  LEGACY_INVALID_PLANNER_MESSAGE,
+  LEGACY_INVALID_COMPANION_MESSAGE,
+  PLANNER_RELOAD_REQUIRED,
+} from "./companion-errors.js";
 
 export class CompanionClient {
   private port: chrome.runtime.Port;
@@ -27,6 +32,19 @@ export class CompanionClient {
         return;
       }
       const event = parsed.data;
+      if (
+        event.type === "error" &&
+        [
+          LEGACY_INVALID_PLANNER_MESSAGE,
+          LEGACY_INVALID_COMPANION_MESSAGE,
+        ].includes(event.message)
+      ) {
+        // Older workers do not include the request ID. Fail outstanding calls
+        // immediately without dropping the authenticated native connection.
+        this.rejectPending(new Error(PLANNER_RELOAD_REQUIRED));
+        this.onEvent({ ...event, message: PLANNER_RELOAD_REQUIRED });
+        return;
+      }
       if (event.type === "reply") {
         const p = this.pending.get(event.id);
         if (p) {
@@ -70,12 +88,15 @@ export class CompanionClient {
   private finish() {
     if (!this.connected) return;
     this.connected = false;
+    this.rejectPending(new Error("Companion disconnected"));
+    this.onDisconnect();
+  }
+  private rejectPending(error: Error) {
     for (const p of this.pending.values()) {
       clearTimeout(p.timer);
-      p.reject(new Error("Companion disconnected"));
+      p.reject(error);
     }
     this.pending.clear();
-    this.onDisconnect();
   }
   close() {
     this.finish();
