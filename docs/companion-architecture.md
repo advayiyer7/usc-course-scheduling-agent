@@ -22,7 +22,7 @@ Dynamic tools are experimental app-server APIs. Pinning the runtime and running 
 
 - Native requests at most 64 KiB; responses at most 512 KiB; bounded output queue.
 - Strict action schemas, at most eight concurrent native requests, bounded RPC queue and 20-second RPC timeout.
-- One response at a time, at most 30 tool calls and three proposals per turn, 180-second turn limit.
+- One response at a time, at most 30 tool calls and two proposals per turn, 180-second turn limit.
 - Official MCP requests have 15-second timeouts. Course calls retain existing backend schemas, quotas, immutable snapshots, and shared refresh budget. No user prompt causes a full catalog fetch.
 - No raw provider errors or diagnostics in Chrome. Failed requests never automatically retry inference.
 - Stop, disconnect, logout, and new-chat invalidate pending proposal publication. Native host disconnect terminates the runtime. The pilot has ephemeral chat threads; closing its connection ends that conversation.

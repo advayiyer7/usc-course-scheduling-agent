@@ -1,14 +1,31 @@
 import { z } from "zod";
-import { constraints, inputs, termCode } from "./index.js";
+import { constraints, courseCode, inputs, termCode } from "./index.js";
 
 export const NATIVE_HOST = "edu.usc.course_planner";
 export const CODEX_VERSION = "0.153.4";
 export const MAX_NATIVE_BYTES = 512 * 1024;
+export const MAX_SCHEDULE_DRAFTS = 2;
+export const removedCourses = z
+  .array(
+    z
+      .object({
+        course_code: courseCode,
+        aliases: z.array(courseCode).max(30),
+      })
+      .strict(),
+  )
+  .max(100);
 export const planningContext = z
   .object({
     major: z.string().trim().max(120).default(""),
     term_code: termCode,
     course_codes: z.array(z.string().max(24)).max(20),
+    selected_section_ids: z
+      .array(z.string().regex(/^\d{5}$/))
+      .max(100)
+      .optional(),
+    snapshot_version: z.string().uuid().optional(),
+    removed_courses: removedCourses.optional(),
     constraints,
   })
   .strict();
@@ -50,6 +67,7 @@ export const companionRequest = z.discriminatedUnion("method", [
       method: z.literal("chat"),
       text: z.string().trim().min(1).max(6000),
       context: planningContext,
+      generation_id: messageId.optional(),
     })
     .strict(),
 ]);
@@ -71,10 +89,15 @@ export const companionEvent = z.discriminatedUnion("type", [
     complete: z.boolean(),
   }),
   z.object({ type: z.literal("tool"), name: z.string().max(80) }),
-  z.object({ type: z.literal("proposal"), proposal }),
+  z.object({
+    type: z.literal("proposal"),
+    proposal,
+    generation_id: messageId.optional(),
+  }),
   z.object({
     type: z.literal("turn_complete"),
     status: z.enum(["completed", "interrupted", "failed"]),
+    generation_id: messageId.optional(),
   }),
   z.object({ type: z.literal("error"), message: z.string().max(1000) }),
   z.object({
@@ -106,6 +129,17 @@ export function protectConstraints(
 ) {
   if (candidate.term_code !== context.term_code)
     throw new Error("Proposal semester differs from the current planner");
+  const removed = new Set(
+    context.removed_courses?.flatMap((c) => [c.course_code, ...c.aliases]) ??
+      [],
+  );
+  const resurrected = candidate.requested_courses.filter((code) =>
+    removed.has(code),
+  );
+  if (resurrected.length)
+    throw new Error(
+      `These courses were removed from the planner: ${resurrected.join(", ")}. Rebuild the proposal without them. The student can undo a removal to allow it again.`,
+    );
   const a = candidate.constraints,
     b = context.constraints;
   const unavailable = [

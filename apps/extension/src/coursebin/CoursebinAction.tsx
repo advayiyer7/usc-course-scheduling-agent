@@ -42,6 +42,9 @@ async function request(
 export function semester(term: number) {
   return `${["", "Spring", "Summer", "Fall"][term % 10]} ${Math.floor(term / 10)}`;
 }
+export async function stopCoursebinRun() {
+  await request({ method: "cancel" });
+}
 interface Props {
   draft: Proposal;
   context: z.infer<typeof planningContext>;

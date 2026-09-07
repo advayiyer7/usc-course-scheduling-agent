@@ -79,7 +79,7 @@ export class McpCourseTools implements CourseTools {
         type: "function",
         name: "present_schedule",
         description:
-          "Validate a proposed schedule and show a draft card in the student's extension. Supply exact source IDs and snapshot. Unknown rules remain indeterminate. Does not change the student's calendar, coursebin, or enrollment. At most three drafts per turn.",
+          "Validate a proposed schedule and show a draft card in the student's extension. Supply exact source IDs and snapshot. Unknown rules remain indeterminate. Does not change the student's calendar, coursebin, or enrollment. At most two drafts per turn. Rebuild from current planner context; removed courses remain excluded.",
         inputSchema: z.toJSONSchema(proposalInput, { io: "input" }),
         deferLoading: false,
       },

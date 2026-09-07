@@ -222,7 +222,11 @@ it("handles an entire fast response before its turn/start reply without reactiva
   await starting;
   await settle();
   expect(f.events.filter((e) => e.type === "turn_complete")).toEqual([
-    { type: "turn_complete", status: "completed" },
+    {
+      type: "turn_complete",
+      status: "completed",
+      generation_id: expect.any(String),
+    },
   ]);
   await f.command("status");
   expect(f.events.filter((e) => e.type === "status").at(-1)).toMatchObject({

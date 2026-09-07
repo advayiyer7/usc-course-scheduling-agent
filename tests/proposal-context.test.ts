@@ -53,3 +53,27 @@ it("rejects drafts from another semester and contradictory newer constraints", (
     ),
   ).toThrow();
 });
+it("rejects a removed course through its old code or a cross-listed alias, including an emptied planner", () => {
+  const current = planningContext.parse({
+    term_code: 20263,
+    course_codes: [],
+    removed_courses: [
+      { course_code: "TEST100", aliases: ["TEST100", "OTHR100"] },
+    ],
+    constraints: {},
+  });
+  for (const code of ["TEST100", "OTHR100"])
+    expect(() =>
+      protectConstraints({ ...candidate, requested_courses: [code] }, current),
+    ).toThrow("removed");
+  expect(
+    protectConstraints(
+      { ...candidate, requested_courses: ["TEST200"] },
+      current,
+    ).requested_courses,
+  ).toEqual(["TEST200"]);
+  expect(
+    protectConstraints(candidate, { ...current, removed_courses: [] })
+      .requested_courses,
+  ).toEqual(["TEST100"]);
+});

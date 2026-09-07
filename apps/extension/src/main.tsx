@@ -17,6 +17,7 @@ import {
 } from "../../../packages/contracts/src/review.js";
 import {
   protectConstraints,
+  removedCourses as removedCoursesSchema,
   type Proposal,
 } from "../../../packages/contracts/src/companion.js";
 import "./style.css";
@@ -56,6 +57,7 @@ const savedSchema = z.object({
   ids: z.array(z.string()).max(100),
   constraints: constraintsSchema,
   version: z.string().uuid().optional(),
+  removed_courses: removedCoursesSchema.optional(),
 });
 type Constraints = z.infer<typeof constraintsSchema>;
 type Validation = ValidationReview;
@@ -79,6 +81,9 @@ function App() {
   const [courses, setCourses] = useState<Course[]>([]),
     [sections, setSections] = useState<Section[]>([]),
     [ids, setIds] = useState<string[]>([]);
+  const [removedCourses, setRemovedCourses] = useState<
+    z.infer<typeof removedCoursesSchema>
+  >([]);
   const [constraints, setConstraints] = useState<Constraints>({
     unavailable: [],
     preferences: { instructors: [], free_days: [] },
@@ -156,6 +161,7 @@ function App() {
         major: "",
         term_code: term,
         course_codes: courses.map((c) => c.code),
+        removed_courses: removedCourses,
         constraints,
       });
       const data = await retrieve(
@@ -234,6 +240,7 @@ function App() {
         setSections(data.sections);
         setMeta(data.meta);
         if (restored.success) {
+          setRemovedCourses(restored.data.removed_courses ?? []);
           setIds(
             restored.data.ids.filter((id) =>
               data.sections.some((s) => s.id === id),
@@ -267,8 +274,9 @@ function App() {
       ids,
       constraints,
       version,
+      removed_courses: removedCourses,
     }).catch(() => setError("Preferences could not be saved locally."));
-  }, [ready, term, courses, ids, constraints, version]);
+  }, [ready, term, courses, ids, constraints, version, removedCourses]);
   useEffect(() => {
     if (!ready || busy || !courses.length || !ids.length || !version) {
       setReview(undefined);
@@ -362,6 +370,12 @@ function App() {
         version,
       );
       setCourses(d.courses);
+      setRemovedCourses((old) =>
+        old.filter(
+          (removed) =>
+            !d.courses.some((c) => c.aliases.includes(removed.course_code)),
+        ),
+      );
       setSections(d.sections);
       setMeta(d.meta);
       setVersion(d.meta?.snapshot_version);
@@ -370,13 +384,24 @@ function App() {
     });
   }
   function remove(code: string) {
+    const course = courses.find((c) => c.code === code);
+    if (!course) return;
+    const removals = removedCoursesSchema.safeParse([
+      ...removedCourses.filter((c) => c.course_code !== code),
+      { course_code: course.code, aliases: course.aliases },
+    ]);
+    if (!removals.success) {
+      setError("Undo an older course removal before removing another course.");
+      return;
+    }
     generation.current++;
+    setRemovedCourses(removals.data);
     const rest = courses.filter((c) => c.code !== code);
     setCourses(rest);
-    setSections((prev) => prev.filter((s) => s.course_key !== code));
+    setSections((prev) => prev.filter((s) => s.course_key !== course.key));
     setIds((prev) =>
       prev.filter(
-        (id) => sections.find((s) => s.id === id)?.course_key !== code,
+        (id) => sections.find((s) => s.id === id)?.course_key !== course.key,
       ),
     );
   }
@@ -489,6 +514,7 @@ function App() {
                 terms.find((x) => x.term_code === t)?.snapshot_version,
               );
               setCourses([]);
+              setRemovedCourses([]);
               setSections([]);
               setIds([]);
               setResults([]);
@@ -531,10 +557,19 @@ function App() {
               major: "",
               term_code: term,
               course_codes: courses.map((c) => c.code),
+              selected_section_ids: ids,
+              snapshot_version: version,
+              removed_courses: removedCourses,
               constraints,
             }}
             plannerBusy={busy || !ready}
             onLoad={loadProposal}
+            onUndoRemoval={(code) => {
+              generation.current++;
+              setRemovedCourses((old) =>
+                old.filter((c) => c.course_code !== code),
+              );
+            }}
           />
         </div>
         <div hidden={view !== "planner"}>

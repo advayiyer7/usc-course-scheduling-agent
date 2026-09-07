@@ -54,7 +54,7 @@ Choose the term, courses and time preferences, then ask the companion to propose
 
 Use **Stop response** to interrupt a running response, **New chat** to start a new conversation, and **Sign out** to end the companion account session. New chat is not account sign-out or secure deletion of local history. Closing the panel disconnects the companion and ends its ephemeral conversation; switching between **Chat with Codex** and **My planner** keeps the connection alive. Only one planner chat window can connect at a time.
 
-**Suggest schedules** asks the AI for candidates using the existing tools; it is not a deterministic optimizer. Draft cards show source age and validation status. **Load into planner** rechecks the draft against your current required courses and hard constraints before applying it. Coursebin buttons are deliberately absent from this pilot because authenticated WebReg interaction has not been implemented.
+**Generate plans** asks the AI for candidates using the existing tools; it is not a deterministic optimizer. Draft cards show source age and validation status. **Edit in planner** rechecks the draft against your current required courses and hard constraints before applying it. Each card also has **Add to coursebin**, which opens a separate exact-section review. Current component and freshness gates still prevent a live addition; see [coursebin readiness](coursebin.md).
 
 Run `npm run smoke:companion` for a real signed-out Codex protocol test. After installation, `npm run smoke:native` verifies the installed launcher, account status and (when signed out) starts/cancels the official login flow without completing authentication or making a model request. Actual account access and chat must still be verified interactively.
 
@@ -83,3 +83,11 @@ The installer refuses to overwrite or delete an unrelated, modified, or linked r
 | Reinstall/uninstall reports a collision | Review the exact path in the error; the installer will preserve files it cannot identify as its own. |
 
 The installer tests use temporary directories and a synthetic host to check macOS/Linux path selection, shell argument forwarding, ownership and uninstall behavior. Real Chrome native-host operation and account sign-in must be verified with the complete companion build; passing installer tests alone does not establish end-to-end compatibility.
+
+### Refreshing plans after edits
+
+Remove a course in **My planner**, then return to chat and ask for your new plan. Chat shows the remaining courses and explicit removals, and sends the current selections with your message. Removed courses are excluded from new cards, including their aliases. Use **Undo** in chat if you want the assistant to consider a removed course again, or add it back in the editor. Removals persist locally for the selected semester until undone or the semester is changed; they do not change WebReg.
+
+Each new message replaces the previous plan cards. At most two current cards appear. Earlier chat messages can be expanded separately, and coursebin result reports remain available. Editing courses, selected sections, constraints, major or the snapshot clears outdated cards. An in-progress response for the old context is stopped; request new plans after finishing edits.
+
+After updating the code, run `npm run build`, reload USC Course Planner at `chrome://extensions`, reload the signed-in WebReg tab to install the updated page adapter, and reopen/reconnect the extension. This ends the old chat but preserves local preferences and the companion account profile. The current buttons are **Generate plans**, **Edit in planner**, and **Add to coursebin**. Live addition remains subject to the documented validation gates.

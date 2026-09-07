@@ -292,6 +292,7 @@ describe("companion workflow", () => {
     expect(events).toContainEqual({
       type: "turn_complete",
       status: "interrupted",
+      generation_id: expect.any(String),
     });
   });
   it("caps drafts and rejects stale calls after stop", async () => {
@@ -309,7 +310,7 @@ describe("companion workflow", () => {
         },
       });
     await settle();
-    expect(events.filter((e) => e.type === "proposal")).toHaveLength(3);
+    expect(events.filter((e) => e.type === "proposal")).toHaveLength(2);
     expect(rpc.replies[3]?.result.success).toBe(false);
     await command("stop");
     rpc.emit("request", {
@@ -370,4 +371,51 @@ describe("app-server process boundary", () => {
     );
     await expect(rpc.request("exit", {})).rejects.toThrow("disconnected");
   });
+});
+
+it("sends current removal/section context and rejects resurrected courses before validation without consuming a draft slot", async () => {
+  const { command, rpc, events, calls } = setup();
+  const generationId = randomUUID();
+  const updated = {
+    ...context,
+    selected_section_ids: ["10001"],
+    removed_courses: [
+      { course_code: "TEST200", aliases: ["TEST200", "OTHR200"] },
+    ],
+  };
+  await command("chat", {
+    text: "I removed those classes; get my new plan",
+    context: updated,
+    generation_id: generationId,
+  });
+  const input = rpc.calls.find((c) => c.method === "turn/start")!.params
+    .input[0].text;
+  expect(input).toContain('"removed_courses":[{"course_code":"TEST200"');
+  expect(input).toContain('"selected_section_ids":["10001"]');
+  const send = (id: number, codes: string[]) =>
+    rpc.emit("request", {
+      id,
+      method: "item/tool/call",
+      params: {
+        threadId: "thread1",
+        turnId: "turn1",
+        tool: "present_schedule",
+        arguments: { ...selection, requested_courses: codes },
+      },
+    });
+  send(1, ["TEST100", "OTHR200"]);
+  send(2, ["TEST100"]);
+  send(3, ["TEST100"]);
+  send(4, ["TEST100"]);
+  await settle();
+  expect(calls).toHaveLength(2);
+  expect(rpc.replies.map((r) => r.result.success)).toEqual([
+    false,
+    true,
+    true,
+    false,
+  ]);
+  expect(
+    events.filter((e) => e.type === "proposal").map((e) => e.generation_id),
+  ).toEqual([generationId, generationId]);
 });

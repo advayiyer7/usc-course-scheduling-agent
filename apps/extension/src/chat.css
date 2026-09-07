@@ -261,3 +261,169 @@
     max-height: 42vh;
   }
 }
+
+.companion-settings {
+  border-block: 1px solid #e8e1d6;
+  padding: 10px 0;
+  margin: 16px 0;
+}
+.companion-settings > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: #655e52;
+}
+.planner-context {
+  padding: 13px 15px;
+  border-radius: 10px;
+  background: #f4f1e9;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.planner-context p {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+.planner-context small {
+  display: block;
+  color: #71685c;
+  margin-top: 8px;
+}
+.removed-courses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+.removed-course {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #ddc8be;
+  border-radius: 6px;
+  padding: 3px 7px;
+  color: #754434;
+}
+.removed-course button {
+  padding: 2px 4px;
+  background: none;
+  color: #81242a;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.history-toggle {
+  background: transparent;
+  color: #756b5b;
+  font-size: 12px;
+  padding: 5px 0 12px;
+}
+.proposal-list {
+  margin-top: 24px;
+}
+.proposal-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.proposal-list-heading h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.proposal-list-heading > span {
+  color: #776e60;
+  font-size: 12px;
+}
+.proposal-card {
+  min-width: 0;
+  box-shadow: 0 3px 12px #38240d05;
+}
+.proposal-card > div:first-child {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proposal-card > div:first-child h3 {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.plan-number {
+  background: #8f272b;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.plan-courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 13px;
+}
+.plan-courses span {
+  padding: 4px 8px;
+  border: 1px solid #e6dfd3;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.proposal-details {
+  border-top: 1px solid #ede6db;
+  margin: 14px 0;
+  padding-top: 10px;
+}
+.proposal-details > summary {
+  cursor: pointer;
+  color: #765f43;
+  font-size: 13px;
+  padding: 3px 0;
+}
+.plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.plan-actions > .coursebin-action {
+  display: contents;
+}
+.plan-actions .coursebin-review,
+.plan-actions .chat-note,
+.plan-actions .chat-error {
+  flex-basis: 100%;
+}
+.plan-actions > button,
+.plan-actions .coursebin-action > button {
+  margin: 0;
+  font-size: 12px;
+}
+.active-coursebin {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #f3e8ce;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.chat-composer:focus-within {
+  border-color: #a2745b;
+  box-shadow: 0 0 0 2px #b8916620;
+}
+.chat-composer textarea:focus-visible {
+  outline: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  .chat-composer {
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+}
