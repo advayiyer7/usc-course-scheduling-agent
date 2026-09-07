@@ -6,6 +6,8 @@ The six initial tools are implemented for local development; limits below descri
 
 Every successful result includes `data` and `meta` with `term_code`, `snapshot_version`, `checked_at`, `fetch_interval`, `stale`, `coverage_status` and `warnings`. Use nullable term fields for term-list results. If records have different ages, include record-level timestamps and the oldest checked-at value in the envelope. `checked_at` describes retrieval time, not a guarantee of when USC last updated its source.
 
+For bounded course/section lookups, refresh-request responses and schedule validation, freshness covers the records used by that result. Validation includes requested course records, selected sections and their owning courses. The envelope reports their oldest observation and the interval through the newest observation; a targeted update does not inherit unrelated old catalog timestamps. Mixed or cross-listed evidence retains its oldest relevant timestamp. If a requested course/section is missing, metadata conservatively falls back to whole-snapshot evidence rather than dating absence from a fresh partial hit. Term lists and broad searches retain whole-catalog freshness. Coverage status still describes snapshot completeness, independently of freshness. Old pinned versions remain old; queuing or failing a refresh never changes their evidence.
+
 Use structured errors: `INVALID_INPUT`, `TERM_UNAVAILABLE`, `SNAPSHOT_UNAVAILABLE`, `SNAPSHOT_EXPIRED`, `NOT_FOUND`, `RATE_LIMITED`, `SOURCE_UNAVAILABLE`, `VALIDATION_INDETERMINATE`. Include actionable messages and `retry_after_seconds` when appropriate. Never fabricate an empty success on failure.
 
 ## Tools

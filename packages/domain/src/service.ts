@@ -45,15 +45,30 @@ export class CourseService {
     });
     return promise;
   }
-  private meta(s: Snapshot) {
+  private meta(s: Snapshot, records?: { checked_at: string }[]) {
+    // A targeted overlay retains old catalog records. Its publication time is
+    // not evidence that either the whole term or a selected record is fresh.
+    const dates = records
+      ?.map((r) => r.checked_at)
+      .sort((a, b) => Date.parse(a) - Date.parse(b));
+    const scoped = !!dates?.length;
+    const start = scoped ? dates[0]! : s.started_at;
+    const end = scoped ? dates.at(-1)! : s.ended_at;
     return {
       term_code: s.term,
       snapshot_version: s.id,
-      checked_at: s.started_at,
-      fetch_interval: { start: s.started_at, end: s.ended_at },
-      stale: Date.now() - Date.parse(s.started_at) > 300000,
+      checked_at: start,
+      fetch_interval: { start, end },
+      stale:
+        !Number.isFinite(Date.parse(start)) ||
+        Date.now() - Date.parse(start) > 300000,
       coverage_status: s.coverage,
       warnings: [
+        ...(scoped
+          ? [
+              "Freshness covers the records used by this result; other courses in this snapshot may be older.",
+            ]
+          : []),
         "Coverage is the public catalog, not personal eligibility.",
         "Locations, component rules and meeting date ranges are not verified.",
         "Syllabus URLs are not confirmed available documents.",
@@ -226,6 +241,16 @@ export class CourseService {
         code,
         courses: dataset.courses.filter((c) => c.aliases.includes(code)),
       }));
+      // Absence cannot be dated from the found subset. Keep whole-catalog
+      // evidence for missing codes rather than presenting a fresh partial hit.
+      const matchedCourses = matches.flatMap((m) => m.courses);
+      const lookupMeta = (sections: Section[] = []) =>
+        this.meta(
+          s,
+          matches.every((m) => m.courses.length)
+            ? [...matchedCourses, ...sections]
+            : undefined,
+        );
       if (name === "get_courses")
         return {
           data: matches.map((m) => ({
@@ -236,7 +261,7 @@ export class CourseService {
               clearance_guidance: guidanceForCourse(c, r.term_code),
             })),
           })),
-          meta,
+          meta: lookupMeta(),
         };
       const keys = new Set(matches.flatMap((m) => m.courses.map((c) => c.key)));
       if (name === "get_sections") {
@@ -259,7 +284,7 @@ export class CourseService {
               .filter((m) => !m.courses.length)
               .map((m) => m.code),
           },
-          meta,
+          meta: lookupMeta(selectedPage.items),
         };
       }
       // No refresh for unknown codes. Cooldowns and queue limits apply even across different callers.
@@ -296,10 +321,29 @@ export class CourseService {
           message:
             "Queued or recently attempted; a refresh does not guarantee immediate freshness.",
         },
-        meta,
+        meta: lookupMeta(),
       };
     }
     const r = inputs.validate_schedule.parse(raw);
-    return { data: validate(r, dataset.courses, dataset.sections), meta };
+    const selected = dataset.sections.filter((section) =>
+      r.section_ids.includes(section.id),
+    );
+    const usedCourses = dataset.courses.filter(
+      (course) =>
+        course.aliases.some((alias) => r.requested_courses.includes(alias)) ||
+        selected.some((section) => section.course_key === course.key),
+    );
+    const complete =
+      selected.length === r.section_ids.length &&
+      r.requested_courses.every((code) =>
+        usedCourses.some((course) => course.aliases.includes(code)),
+      ) &&
+      selected.every((section) =>
+        usedCourses.some((course) => course.key === section.course_key),
+      );
+    return {
+      data: validate(r, dataset.courses, dataset.sections),
+      meta: this.meta(s, complete ? [...usedCourses, ...selected] : undefined),
+    };
   }
 }

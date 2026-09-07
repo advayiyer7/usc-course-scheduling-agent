@@ -41,6 +41,19 @@ the cadence or duplicate a completed run. Restart processes to load environment
 changes; changing the interval takes effect after the next successful refresh.
 Removing a configured term or disabling refresh leaves its cache/history intact.
 
+Bounded lookups and validation report freshness for their relevant courses and
+sections, using the oldest contributing observation. Whole-term listings and
+searches still report the catalog's oldest observation. This distinction lets a
+successfully refreshed selection become current without pretending that every
+other department was refreshed. Missing requested records fall back to the
+whole-catalog timestamp; older cross-list evidence remains visible.
+
+After `request_refresh`, read current courses/sections without an old snapshot
+pin, preserve the student's exact selected section IDs, and validate them against
+the newly returned version. A queued or recently completed job is not itself a
+freshness guarantee. A saved draft keeps its old version until explicitly
+rechecked. Refreshing data does not verify component rules or personal eligibility.
+
 ## Failure handling and concurrency
 
 Full refreshes, targeted jobs and manual ingestion share the existing worker
@@ -82,3 +95,8 @@ failure, archived/disabled terms, configuration validation, competing schedulers
 and targeted jobs. Tests make no live USC requests. They use PGlite by default;
 set the existing `TEST_DATABASE_URL` for the dedicated PostgreSQL test database
 to exercise the same suite against PostgreSQL.
+
+Freshness regression tests cover selected versus unrelated records, mixed ages,
+old pinned versions, missing records, cross-list evidence and failed refreshes.
+The 100-request coalescing test observes one upstream fixture request, a fresh
+selected program and unchanged old evidence for another program.
