@@ -43,6 +43,11 @@ vi.mock("../apps/extension/src/companion-client.js", () => ({
     close() {}
   },
 }));
+import { App } from "../apps/extension/src/App.js";
+import { normalize } from "../packages/source-usc/src/schema.js";
+import { validate } from "../packages/domain/src/validate.js";
+import { inputs } from "../packages/contracts/src/index.js";
+import { response, course, sourceSection } from "./fixtures.js";
 import { ChatPanel } from "../apps/extension/src/ChatPanel.js";
 const context = planningContext.parse({
   major: "",
@@ -143,6 +148,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => root.unmount());
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 it("replaces old plans before a new response, caps display at two, and rejects delayed cards from the previous request", async () => {
   await click("Generate plans");
@@ -226,20 +232,6 @@ it("does not resurrect old cards when regeneration fails", async () => {
   expect(container.querySelectorAll(".proposal-card")).toHaveLength(0);
   expect(container.textContent).toContain("Test connection failed");
 });
-it("keeps a running coursebin report and a Stop control even without a draft", async () => {
-  background.mockResolvedValue({
-    ok: true,
-    active: true,
-  });
-  await act(async () => root.unmount());
-  root = createRoot(container);
-  await render();
-  expect(button("Stop after current section")).toBeTruthy();
-  await click("Stop after current section");
-  expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
-    expect.objectContaining({ method: "cancel" }),
-  );
-});
 it("does not accept retired generations after context returns to an earlier value", () => {
   const shelf = new DraftShelf();
   shelf.begin("old", "A");
@@ -250,4 +242,148 @@ it("does not accept retired generations after context returns to an earlier valu
   expect(shelf.accept("new", draft(2))).toHaveLength(1);
   shelf.finish("new");
   expect(shelf.accept("new", draft(3))).toBeUndefined();
+});
+
+async function mountApp(active = false) {
+  const courses = normalize(20263, [
+    response([
+      course("TEST100", [
+        sourceSection("10001"),
+        sourceSection("10002", "12:00", "13:00"),
+      ]),
+    ]),
+  ]);
+  const meta = draft(1).validation.meta;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, options: RequestInit) => {
+      const input = JSON.parse(String(options.body));
+      const name = url.split("/").at(-1);
+      const data =
+        name === "list_terms"
+          ? [{ term_code: 20263, snapshot_version: meta.snapshot_version }]
+          : name === "get_courses"
+            ? [{ courses }]
+            : name === "get_sections"
+              ? { items: courses.flatMap((c) => c.sections), next_cursor: null }
+              : name === "validate_schedule"
+                ? validate(
+                    inputs.validate_schedule.parse(input),
+                    courses,
+                    courses.flatMap((c) => c.sections),
+                  )
+                : {};
+      return new Response(JSON.stringify({ data, meta }));
+    }),
+  );
+  background.mockClear();
+  background.mockResolvedValue({ ok: true, active });
+  await act(async () => root.unmount());
+  root = createRoot(container);
+  await act(async () => root.render(React.createElement(App)));
+}
+const cards = () => container.querySelectorAll(".proposal-card");
+const plannerTab = () =>
+  [...container.querySelectorAll<HTMLButtonElement>("nav button")].find((b) =>
+    b.textContent?.startsWith("My planner"),
+  )!;
+const flushReview = async () => {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  });
+};
+it("keeps both drafts across tab navigation and loading either plan; Add to coursebin is only in the planner", async () => {
+  await mountApp();
+  await click("Connect companion");
+  await click("Generate plans");
+  await show(1);
+  const second = draft(2);
+  second.selection.section_ids = ["10002"];
+  await emit({
+    type: "proposal",
+    proposal: second,
+    generation_id: generation(),
+  });
+  await complete();
+  expect(cards()).toHaveLength(2);
+  const chat = container.querySelector(
+    '[aria-label="Codex scheduling assistant"]',
+  )!;
+  expect(
+    [...chat.querySelectorAll("button")].some(
+      (b) => b.textContent === "Add to coursebin",
+    ),
+  ).toBe(false);
+  await act(async () => plannerTab().click());
+  await click("Chat with Codex");
+  expect(cards()).toHaveLength(2);
+  await act(async () => cards()[0]!.querySelector("button")!.click());
+  await flushReview();
+  expect(plannerTab().getAttribute("aria-pressed")).toBe("true");
+  await click("Add to coursebin");
+  expect(background).toHaveBeenCalledWith(
+    expect.objectContaining({
+      method: "prepare",
+      proposal: expect.objectContaining({
+        selection: expect.objectContaining({ section_ids: ["10001"] }),
+      }),
+    }),
+  );
+  expect(background).not.toHaveBeenCalledWith(
+    expect.objectContaining({ method: "execute" }),
+  );
+  await click("Chat with Codex");
+  expect(cards()).toHaveLength(2);
+  await act(async () => cards()[1]!.querySelector("button")!.click());
+  await flushReview();
+  await click("Add to coursebin");
+  expect(background).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      method: "prepare",
+      proposal: expect.objectContaining({
+        selection: expect.objectContaining({ section_ids: ["10002"] }),
+      }),
+    }),
+  );
+  await click("Chat with Codex");
+  expect(cards()).toHaveLength(2);
+});
+it("invalidates loaded drafts on actual removal and ignores old events after navigating back", async () => {
+  await mountApp();
+  await click("Connect companion");
+  await click("Generate plans");
+  const oldGeneration = generation();
+  await show(1);
+  await show(2);
+  await complete();
+  await click("Edit in planner");
+  await flushReview();
+  await act(async () =>
+    container
+      .querySelector<HTMLButtonElement>('[aria-label="Remove TEST100"]')!
+      .click(),
+  );
+  await click("Chat with Codex");
+  expect(cards()).toHaveLength(0);
+  await show(3, oldGeneration);
+  expect(cards()).toHaveLength(0);
+  await click("Generate plans");
+  await show(4);
+  await complete();
+  expect(cards()).toHaveLength(1);
+  expect(
+    peer.requests.findLast((r) => r.method === "chat").context.removed_courses,
+  ).toEqual([{ course_code: "TEST100", aliases: ["TEST100"] }]);
+});
+it("keeps recovery Stop outside both tabs when a coursebin run is active", async () => {
+  await mountApp(true);
+  const stop = button("Stop after current section");
+  expect(stop).toBeTruthy();
+  expect(stop.closest("[hidden]")).toBeNull();
+  await act(async () => plannerTab().click());
+  expect(stop.closest("[hidden]")).toBeNull();
+  await click("Stop after current section");
+  expect(background).toHaveBeenCalledWith(
+    expect.objectContaining({ method: "cancel" }),
+  );
 });

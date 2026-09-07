@@ -807,3 +807,13 @@ footer {
   margin: 5px 0;
   font-size: 12px;
 }
+
+.planner-editor {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.planner-coursebin {
+  margin-bottom: 20px;
+}

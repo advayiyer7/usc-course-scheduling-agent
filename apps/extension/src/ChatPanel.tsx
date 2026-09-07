@@ -10,12 +10,7 @@ import {
 } from "../../../packages/contracts/src/companion.js";
 import { CompanionClient } from "./companion-client.js";
 import { DraftShelf } from "./draft-shelf.js";
-import {
-  CoursebinAction,
-  CoursebinLog,
-  CoursebinResult,
-  stopCoursebinRun,
-} from "./coursebin/CoursebinAction.js";
+import { CoursebinResult } from "./coursebin/CoursebinAction.js";
 import type { CoursebinReport } from "../../../packages/contracts/src/coursebin.js";
 import "./chat.css";
 
@@ -30,6 +25,10 @@ interface Props {
   onLoad: (proposal: Proposal) => Promise<void>;
   plannerBusy: boolean;
   onUndoRemoval?: (code: string) => void;
+  plannerRevision?: number;
+  coursebinBusy?: boolean;
+  coursebinRunning?: boolean;
+  coursebinReport?: CoursebinReport;
 }
 const nativeAvailable = () =>
   typeof chrome !== "undefined" && !!chrome.runtime?.id;
@@ -40,6 +39,10 @@ export function ChatPanel({
   onLoad,
   plannerBusy,
   onUndoRemoval,
+  plannerRevision,
+  coursebinBusy = false,
+  coursebinRunning = false,
+  coursebinReport,
 }: Props) {
   const client = useRef<CompanionClient | null>(null);
   const [status, setStatus] = useState<z.infer<typeof accountStatus>>();
@@ -55,9 +58,6 @@ export function ChatPanel({
     [activity, setActivity] = useState(""),
     [loginUrl, setLoginUrl] = useState("");
   const [loadingId, setLoadingId] = useState("");
-  const [coursebinBusy, setCoursebinBusy] = useState(false);
-  const [coursebinRunning, setCoursebinRunning] = useState(false);
-  const [coursebinReviewOwner, setCoursebinReviewOwner] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [draftContext, setDraftContext] = useState("");
   const shelf = useRef(new DraftShelf());
@@ -67,7 +67,15 @@ export function ChatPanel({
   const contextKey = JSON.stringify({ ...context, major });
   const currentContextKey = useRef(contextKey);
   currentContextKey.current = contextKey;
-  const visibleDrafts = draftContext === contextKey ? drafts : [];
+  // Loading a checked draft is a handoff, not a planner edit. The App owns
+  // this revision; actual edits still invalidate cards and pending generations.
+  const draftKey =
+    plannerRevision === undefined
+      ? contextKey
+      : JSON.stringify({ plannerRevision, major });
+  const currentDraftKey = useRef(draftKey);
+  currentDraftKey.current = draftKey;
+  const visibleDrafts = draftContext === draftKey ? drafts : [];
   const latestStudent = Math.max(
     0,
     messages.findLastIndex((m) => m.role === "student"),
@@ -78,9 +86,8 @@ export function ChatPanel({
   const end = useRef<HTMLDivElement>(null);
   const mounted = useRef(true);
   useEffect(() => {
-    shelf.current.setContext(contextKey);
+    shelf.current.setContext(draftKey);
     setDrafts([]);
-    setCoursebinReviewOwner("");
     if (currentTurn.current && currentTurn.current.key !== contextKey) {
       currentTurn.current.valid = false;
       if (currentTurn.current.running)
@@ -92,7 +99,7 @@ export function ChatPanel({
             ),
           );
     }
-  }, [contextKey]);
+  }, [draftKey]);
   useEffect(() => {
     mounted.current = true;
     void (async () => {
@@ -182,7 +189,7 @@ export function ChatPanel({
           const accepted = shelf.current.accept(e.generation_id, e.proposal);
           if (accepted) {
             setDrafts(accepted);
-            setDraftContext(currentTurn.current.key);
+            setDraftContext(currentDraftKey.current);
           } else if (!e.generation_id)
             setError(
               "Update and reconnect the companion to show current schedule cards.",
@@ -277,6 +284,9 @@ export function ChatPanel({
       ).slice(-50);
     });
   }
+  useEffect(() => {
+    if (coursebinReport) showCoursebinReport(coursebinReport);
+  }, [coursebinReport]);
   async function send(suggestion = false, explicitPrompt?: string) {
     const c = client.current;
     if (
@@ -310,10 +320,9 @@ export function ChatPanel({
       valid: true,
       running: true,
     };
-    shelf.current.begin(generationId, contextKey);
+    shelf.current.begin(generationId, draftKey);
     setDrafts([]);
-    setDraftContext(contextKey);
-    setCoursebinReviewOwner("");
+    setDraftContext(currentDraftKey.current);
     setShowHistory(false);
     setBusy(true);
     setText("");
@@ -364,10 +373,6 @@ export function ChatPanel({
   }
   return (
     <section className="chat-panel" aria-label="Codex scheduling assistant">
-      <CoursebinLog
-        onReport={showCoursebinReport}
-        onBusy={setCoursebinRunning}
-      />
       <div className="chat-heading">
         <div>
           <p className="eyebrow">YOUR CODEX · YOUR COURSES</p>
@@ -480,23 +485,6 @@ export function ChatPanel({
           </div>
         )}
       </details>
-      {coursebinRunning && (
-        <div className="active-coursebin" role="status">
-          <span>Adding your confirmed schedule to WebReg…</span>
-          <button
-            className="outline"
-            onClick={() =>
-              void stopCoursebinRun().catch(() =>
-                setError(
-                  "Could not stop the coursebin run. Inspect WebReg before continuing.",
-                ),
-              )
-            }
-          >
-            Stop after current section
-          </button>
-        </div>
-      )}
       {(context.course_codes.length > 0 ||
         !!context.removed_courses?.length) && (
         <div className="planner-context" aria-label="Current planner context">
@@ -739,21 +727,6 @@ export function ChatPanel({
                 >
                   {loadingId === d.id ? "Loading…" : "Edit in planner"}
                 </button>
-                <CoursebinAction
-                  draft={d}
-                  context={{ ...context, major }}
-                  disabled={
-                    busy ||
-                    plannerBusy ||
-                    !!loadingId ||
-                    coursebinBusy ||
-                    coursebinRunning
-                  }
-                  onBusy={setCoursebinBusy}
-                  onReport={showCoursebinReport}
-                  reviewOwner={coursebinReviewOwner}
-                  onReview={setCoursebinReviewOwner}
-                />
               </div>
             </article>
           ))}
@@ -766,9 +739,9 @@ export function ChatPanel({
         stays open. Keep USC passwords and student records out of chat.
       </p>
       <p className="chat-note">
-        Coursebin additions require a draft-specific review and confirmation.
-        Unresolved component rules block addition. Complete registration
-        yourself in WebReg.
+        Use Edit in planner to review a draft, then Add to coursebin from My
+        planner. Unresolved component rules block addition. Complete
+        registration yourself in WebReg.
       </p>
     </section>
   );
