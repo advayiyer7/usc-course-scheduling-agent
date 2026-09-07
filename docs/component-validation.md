@@ -30,3 +30,5 @@ Every supported component finding carries its policy version, review date and of
 4. **Add to coursebin** performs read-only preparation. Review every remaining finding. Do not equate component success with enrollment or a reserved seat.
 
 Fixture tests cover all three profiles, missing and duplicate modes, valid alternative labs, incomplete inventories, missing/nonempty notes, additional programs, new types, linked/mixed-link sections, other sessions/terms/courses, aliases, cancellation, unresolved time conflicts, full seats, source failure rollback, persisted evidence and actual preflight behavior. Source links are schema-validated before rendering.
+
+Installed pilot verification on September 6, 2026 passed with build `d6b4ff3`: after refresh, the unchanged six-section selection showed Required components as Passed and opened the coursebin preview with confirmation enabled. The preview retained date, capacity and clearance warnings. This verified read-only preparation, not a live addition or registration.
