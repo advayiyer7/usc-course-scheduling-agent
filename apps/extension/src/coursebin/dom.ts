@@ -59,16 +59,24 @@ export function readBin(doc: Document, term: number): BinSnapshot {
   );
   const entries = [...doc.querySelectorAll(".section_crsbin")].map((row) => {
     const { section_id, course_code } = identity(row);
-    const states = [...row.querySelectorAll<HTMLElement>(".dvSRtxt")];
+    // WebReg also uses this styling class on unlabelled annotation containers.
+    // Only identified nodes encode scheduled/registered state; never read the
+    // annotation text. Require all four states for this exact section.
+    const states = [...row.querySelectorAll<HTMLElement>(".dvSRtxt")].filter(
+      (node) => node.id !== "",
+    );
+    const identities = states.map((node) =>
+      node.id.match(/^sched([YN])_reg([YN])_status_(\d{5})$/),
+    );
     if (
       states.length !== 4 ||
-      states.some((s) => !["block", "none"].includes(s.style.display))
+      states.some((s) => !["block", "none"].includes(s.style.display)) ||
+      identities.some((match) => !match || match[3] !== section_id) ||
+      new Set(identities.map((match) => match?.slice(1, 3).join(""))).size !== 4
     )
       throw new CoursebinError("UI_CHANGED");
     const state = one(states.filter((s) => s.style.display === "block"));
-    const match = state.id.match(/^sched([YN])_reg([YN])_status_(\d{5})$/);
-    if (!match || match[3] !== section_id)
-      throw new CoursebinError("UI_CHANGED");
+    const match = state.id.match(/^sched([YN])_reg([YN])_status_(\d{5})$/)!;
     return {
       section_id,
       course_code,

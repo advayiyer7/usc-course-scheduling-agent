@@ -67,6 +67,46 @@ describe("observed WebReg DOM contract", () => {
       },
     ]);
   });
+  it("ignores the observed unlabelled status-styled annotation without reading its text", () => {
+    const doc = bin();
+    const row = doc.querySelector(".section_crsbin")!;
+    row.insertAdjacentHTML(
+      "beforeend",
+      '<div class="dvSRtxt col-md-12 col-sm-12 col-xs-12 col-lg-12"><span>Synthetic annotation</span></div>',
+    );
+    const annotation = row.lastElementChild!;
+    Object.defineProperty(annotation, "textContent", {
+      get() {
+        throw new Error("Annotation text must not be read");
+      },
+    });
+    expect(readBin(doc, 20263).entries).toEqual([
+      {
+        section_id: "11111",
+        course_code: "TEST101",
+        scheduled: true,
+        registered: true,
+      },
+    ]);
+  });
+  it.each([
+    "duplicate",
+    "different-section",
+    "unrecognized-identity",
+    "missing",
+  ])("rejects %s even on a hidden status node", (kind) => {
+    const doc = bin();
+    const states = [...doc.querySelectorAll(".dvSRtxt")];
+    if (kind === "missing") states[0]!.remove();
+    else
+      states[0]!.id =
+        kind === "duplicate"
+          ? states[1]!.id
+          : kind === "different-section"
+            ? "schedY_regN_status_99999"
+            : "unrecognized_status";
+    expect(() => readBin(doc, 20263)).toThrow(/controls/);
+  });
   it.each(["YN", "NN", "NY", "YY"])(
     "recognizes only the displayed %s status",
     (state) => {

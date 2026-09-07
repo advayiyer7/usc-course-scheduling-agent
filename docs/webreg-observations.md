@@ -29,3 +29,9 @@ A subsequent read-only same-origin GET verified that `/CourseBin` returns the sa
 ## Ownership and integration
 
 Agreed with **Plan USC course scheduling agent**: this feature owns new coursebin contracts, adapter/controller/UI/tests/docs, extension background/manifest/build integration. The main task owns validator, additive review/clearance schemas and its `ScheduleReview` component. ChatPanel integration is a separate per-card block; review rendering belongs to the main task. Work starts at `a656fb4` on isolated branch `feature/student-coursebin`.
+
+## Existing-bin parser correction — September 6, 2026
+
+Read-only DevTools checks reproduced the later `UI_CHANGED` failure. WebReg reuses `.dvSRtxt` for unlabelled annotation containers: a `DIV` without an ID, blank inline display, responsive column classes and a `SPAN` child. Some rows therefore have five elements with this styling class, while the four actual `sched{Y|N}_reg{Y|N}_status_{id}` elements remain intact. Annotation contents were not inspected or saved.
+
+The parser now examines identified status nodes, verifies all four unique combinations belong to the row's section ID, and requires exactly one displayed state. It ignores unlabelled styling containers without reading their text. A read-only aggregate check passed for every current bin row with these rules. Duplicate, missing, malformed or mismatched state IDs and multiple displayed states still stop execution. This corrects bin inspection only; no live addition or registration was performed, and component/eligibility gates remain unchanged.
