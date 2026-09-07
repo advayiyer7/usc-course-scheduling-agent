@@ -5,6 +5,13 @@ import {
   trustedLoginUrl,
 } from "../../../packages/contracts/src/companion.js";
 import { installCoursebinHandler } from "./coursebin/background.js";
+import { z } from "zod";
+import {
+  LEGACY_INVALID_PLANNER_MESSAGE,
+  PLANNER_RELOAD_REQUIRED,
+} from "./companion-errors.js";
+
+const requestIdentity = z.object({ id: z.string().uuid() });
 
 installCoursebinHandler();
 
@@ -79,7 +86,19 @@ chrome.runtime.onConnect.addListener((ui) => {
   ui.onMessage.addListener((raw: unknown) => {
     const parsed = companionRequest.safeParse(raw);
     if (!parsed.success) {
-      send({ type: "error", message: "Invalid planner message" });
+      const identity = requestIdentity.safeParse(raw);
+      if (identity.success) {
+        // Settle the exact caller now. A bare error leaves its timeout armed.
+        send({
+          type: "reply",
+          id: identity.data.id,
+          ok: false,
+          error: PLANNER_RELOAD_REQUIRED,
+        });
+      } else {
+        // No usable correlation ID; clients can still recognize this legacy diagnostic.
+        send({ type: "error", message: LEGACY_INVALID_PLANNER_MESSAGE });
+      }
       return;
     }
     try {
