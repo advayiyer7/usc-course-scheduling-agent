@@ -28,7 +28,9 @@ Then open `http://127.0.0.1:3000/app/`. This is the same React planner UI packag
 3. Select Load unpacked and choose `apps/extension/build` inside this repository.
 4. Click the extension's toolbar action to open the planner.
 
-The development manifest has a fixed public key, so its ID is `hcihcmbmpmfdihdgejlclbaegnhgjhdk`. The backend allows that exact extension origin. Its permissions are local storage, the Chrome side panel, native messaging to the installed companion, and access to `http://127.0.0.1:3000/*`; no access to USC login pages or other AI websites is requested. The public manifest key is not a server secret or private signing key.
+The development manifest has a fixed public key, so its ID is `hcihcmbmpmfdihdgejlclbaegnhgjhdk`. The backend allows that exact extension origin. Its permissions are storage, the Chrome side panel, native messaging, alarms for the local opening-alert badge, loopback API access and `https://webreg.usc.edu/*` for the reviewed coursebin action. It requests no access to USC identity-provider pages, email websites or unrelated AI websites. The public manifest key is not a server secret or private signing key.
+
+For **Opening alerts**, see [the forwarding pilot setup and synthetic test](opening-alert-pilot.md). Start with `ALERTS_PILOT_ENABLED=true npm run dev` to enable Test alert; domain/provider setup is needed for actual forwarded mail.
 
 ## Assistant connection
 

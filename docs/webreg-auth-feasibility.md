@@ -65,6 +65,14 @@ A reusable password or session credential cannot be recovered from a one-way has
 
 ## Remaining feasibility tests
 
+### Checkout form observation — September 8–9, 2026
+
+In a separate diagnostic browser, the student completed USC sign-in. A normal observed Fall 2026 term-selection link established semester context. An authenticated `GET /Checkout` returned the **Registration Confirmation** page. The original `#MainForm` uses `POST /CheckoutResponse` and contains `activeTerm`, `btnSubmit` and `__RequestVerificationToken`. The Submit control calls `procRegSubmt()`; the public `/dist/site.bundle.js` implementation opens the submitting modal and submits `#MainForm`. No field values, anti-forgery tokens or private course list were retained.
+
+The transaction's sections are rendered outside the form under a **REGISTER** heading, with section identity, units, registered state and grade option among the columns. A POST body alone therefore does not enumerate or limit all server-side pending changes. No DROP/grade-change scenario, submit response, partial failure, post-submit reconciliation or retry was tested. Authentication success and a located endpoint are not sufficient to claim a working executor.
+
+Some subsequent direct checkout reads redirected to `/Terms`; following the ordinary term-selection link again allowed a checkout read. The cause and lifetime of that context were not established. A future implementation must recognize this state transition instead of treating a final HTTP 200 on `/Terms` as a checkout page or automatically replaying a POST. This investigation submitted no coursebin, enrollment or checkout mutation. The [forwarding pilot](opening-alert-pilot.md) supplies the preceding alert/review handoff; checkout remains student-submitted in WebReg.
+
 | Test                                                                           | Status / required evidence                                                                                                |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
 | Use one authenticated session for a standalone HTTP client's read-only request | **Not performed.** Browser cookies were not exported to a separate client. Browser `fetch` success is not this proof.     |

@@ -29,6 +29,7 @@ import {
 import type { CoursebinReport } from "../../../packages/contracts/src/coursebin.js";
 import { refreshExactSelection } from "./planner-refresh.js";
 import "./style.css";
+import { AlertsPanel } from "./alerts/AlertsPanel.js";
 
 const API = "http://127.0.0.1:3000";
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -86,7 +87,11 @@ export function App() {
   const [coursebinRunning, setCoursebinRunning] = useState(false);
   const [coursebinReport, setCoursebinReport] = useState<CoursebinReport>();
   const invalidateDrafts = () => setPlannerRevision((value) => value + 1);
-  const [view, setView] = useState<"chat" | "planner">("chat");
+  const [view, setView] = useState<"chat" | "planner" | "alerts">("chat");
+  const [alertPrompt, setAlertPrompt] = useState<{
+    id: string;
+    text: string;
+  }>();
   const [terms, setTerms] = useState<
       { term_code: number; snapshot_version: string }[]
     >([]),
@@ -682,9 +687,40 @@ export function App() {
           >
             My planner{ids.length ? ` · ${ids.length} sections` : ""}
           </button>
+          <button
+            className={view === "alerts" ? "" : "outline"}
+            aria-pressed={view === "alerts"}
+            onClick={() => setView("alerts")}
+          >
+            Opening alerts
+          </button>
         </nav>
+        <div hidden={view !== "alerts"}>
+          <AlertsPanel
+            plan={{
+              term_code: term,
+              course_codes: courses.map((c) => c.code),
+              section_ids: ids,
+              constraints,
+            }}
+            sections={selected.flatMap((s) => {
+              const course = courses.find((c) => c.key === s.course_key);
+              return course
+                ? [{ id: s.id, course_code: course.code, type: s.type }]
+                : [];
+            })}
+            ready={ready && !busy}
+            disabled={refreshing || coursebinBusy || coursebinRunning}
+            onPrompt={(text) => {
+              setAlertPrompt({ id: crypto.randomUUID(), text });
+              setView("chat");
+            }}
+            onPlanner={() => setView("planner")}
+          />
+        </div>
         <div hidden={view !== "chat"}>
           <ChatPanel
+            suggestedPrompt={alertPrompt}
             context={plannerContext}
             plannerRevision={plannerRevision}
             coursebinBusy={coursebinBusy}

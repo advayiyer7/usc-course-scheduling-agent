@@ -34,12 +34,26 @@ it("accepts only our extension page, relays validated actions and terminates the
     native = port();
   const connectNative = vi.fn(() => native);
   vi.stubGlobal("chrome", {
+    storage: {
+      local: {
+        get: vi.fn(async () => ({})),
+        setAccessLevel: vi.fn(async () => {}),
+      },
+    },
+    action: {
+      setBadgeText: vi.fn(async () => {}),
+      setBadgeBackgroundColor: vi.fn(async () => {}),
+      setTitle: vi.fn(async () => {}),
+    },
+    alarms: { create: vi.fn(), onAlarm: { addListener: vi.fn() } },
     sidePanel: { setPanelBehavior: vi.fn(async () => {}) },
     runtime: {
       id: EXTENSION_ORIGIN.split("://")[1],
       getURL: (path: string) => `${EXTENSION_ORIGIN}/${path}`,
       onConnect: connection,
       onMessage: { addListener: vi.fn() },
+      onStartup: { addListener: vi.fn() },
+      onInstalled: { addListener: vi.fn() },
       connectNative,
     },
   });

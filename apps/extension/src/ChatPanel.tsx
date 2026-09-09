@@ -29,6 +29,7 @@ interface Props {
   coursebinBusy?: boolean;
   coursebinRunning?: boolean;
   coursebinReport?: CoursebinReport;
+  suggestedPrompt?: { id: string; text: string };
 }
 const nativeAvailable = () =>
   typeof chrome !== "undefined" && !!chrome.runtime?.id;
@@ -43,6 +44,7 @@ export function ChatPanel({
   coursebinBusy = false,
   coursebinRunning = false,
   coursebinReport,
+  suggestedPrompt,
 }: Props) {
   const client = useRef<CompanionClient | null>(null);
   const [status, setStatus] = useState<z.infer<typeof accountStatus>>();
@@ -54,6 +56,9 @@ export function ChatPanel({
   const [text, setText] = useState(""),
     [major, setMajor] = useState(""),
     [majorReady, setMajorReady] = useState(false);
+  useEffect(() => {
+    if (suggestedPrompt) setText(suggestedPrompt.text);
+  }, [suggestedPrompt?.id]);
   const [error, setError] = useState(""),
     [activity, setActivity] = useState(""),
     [loginUrl, setLoginUrl] = useState("");

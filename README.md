@@ -6,6 +6,8 @@ A shared USC course-data service that students can use through an MCP-compatible
 
 [Run locally and load the extension](docs/local-setup.md).
 
+[Test the Schedule Helper opening-alert forwarding pilot](docs/opening-alert-pilot.md): save exact-section watches, simulate an email, recheck USC data and prepare a Codex review. Live email receiving needs provider/domain setup; checkout automation is not enabled.
+
 [Install the Codex companion and connect chat](docs/companion-setup.md). USC ChatGPT Edu does not automatically include Codex: ITS currently requires an access request and department approval.
 
 ## Specification
