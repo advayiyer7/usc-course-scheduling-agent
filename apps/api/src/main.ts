@@ -6,6 +6,7 @@ import { CourseService } from "../../../packages/domain/src/service.js";
 import { createApp } from "./http.js";
 import { AlertService } from "../../../packages/domain/src/alerts.js";
 import { startMailPilot } from "./mail-runtime.js";
+import { mailConfig } from "./mail-config.js";
 import { runOneJob } from "../../worker/src/ingest.js";
 import {
   runScheduledRefresh,
@@ -20,14 +21,15 @@ if (host !== "127.0.0.1")
 const port = Number(process.env.PORT ?? 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535)
   throw new Error("Invalid port");
+const mail = mailConfig();
 const store = await configuredStore(),
   source = configuredSource(store);
 const courses = new CourseService(store);
 const alerts = new AlertService(courses, {
-  domain: process.env.ALERTS_INBOUND_DOMAIN,
+  domain: mail?.domain,
   pilot: process.env.ALERTS_PILOT_ENABLED === "true",
 });
-const stopMail = startMailPilot(alerts);
+const stopMail = startMailPilot(alerts, mail);
 const app = createApp(courses, {
   alerts,
   origins: (process.env.EXTENSION_ORIGINS ?? "").split(",").filter(Boolean),

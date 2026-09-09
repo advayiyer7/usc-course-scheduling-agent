@@ -1,21 +1,16 @@
 import { type AlertService } from "../../../packages/domain/src/alerts.js";
 import { createMailApp, MailReceiver } from "./mail-receiver.js";
+import { mailConfig } from "./mail-config.js";
 
-export function startMailPilot(alerts: AlertService) {
-  const key = process.env.RESEND_API_KEY,
-    secret = process.env.RESEND_WEBHOOK_SECRET;
-  if (!!key !== !!secret || (!!key && !alerts.options.domain))
-    throw new Error(
-      "Configure ALERTS_INBOUND_DOMAIN, RESEND_API_KEY and RESEND_WEBHOOK_SECRET together.",
-    );
-  const receiver = key && secret ? new MailReceiver(alerts, key) : undefined;
-  const port = Number(process.env.ALERTS_MAIL_PORT ?? 3001);
-  if (!Number.isInteger(port) || port < 1 || port > 65535)
-    throw new Error("Invalid ALERTS_MAIL_PORT");
+export function startMailPilot(alerts: AlertService, config = mailConfig()) {
+  const receiver = config ? new MailReceiver(alerts, config.apiKey) : undefined;
   // Even with keys, this pilot remains local. Never tunnel the main planner listener.
   const server =
-    receiver && secret
-      ? createMailApp(receiver, secret).listen(port, "127.0.0.1")
+    receiver && config
+      ? createMailApp(receiver, config.webhookSecret).listen(
+          config.port,
+          "127.0.0.1",
+        )
       : undefined;
   if (server) {
     server.requestTimeout = 15000;

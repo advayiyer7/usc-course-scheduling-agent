@@ -23,6 +23,8 @@ The badge checks the local inbox once per minute while Chrome is available; an o
 
 ## Live receiving setup still required
 
+Use the concrete [live setup checklist](mail-setup.md) and `npm run mail:check`. A Resend-managed receiving subdomain avoids a domain purchase. Runtime configuration rejects partial credentials and a receiver port that conflicts with the planner before starting the database.
+
 Resend is the prepared adapter, not a purchased service. Follow its official [receiving setup](https://resend.com/docs/dashboard/receiving/introduction), [signature verification](https://resend.com/docs/webhooks/verify-webhooks-requests) and [received email API](https://resend.com/docs/api-reference/emails/retrieve-received-email). Configure only in the backend environment:
 
 ```dotenv

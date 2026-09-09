@@ -1,5 +1,7 @@
 # USC Course Scheduling Agent
 
+Live opening-email setup: [managed receiving address and local configuration check](docs/mail-setup.md). Run `npm run mail:check` to identify missing configuration without sending mail or exposing a listener.
+
 A shared USC course-data service that students can use through an MCP-compatible AI assistant and a companion Chrome extension.
 
 **Status: local pilot with user-tested Codex sign-in/chat, validated AI draft handoff, automatic planner review, official D-clearance guidance, REST/MCP course tools, and scheduled semester caching. Hosted deployment, consumer installers, and WebReg coursebin actions are not yet released.**

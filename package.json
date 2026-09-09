@@ -23,7 +23,8 @@
     "smoke:stdio": "node --env-file-if-exists=.env --import=tsx scripts/smoke-stdio.ts",
     "smoke:companion": "node --import=tsx scripts/smoke-companion.ts",
     "companion:install": "node --import=tsx scripts/install-companion.ts",
-    "smoke:native": "node --import=tsx scripts/smoke-native.ts"
+    "smoke:native": "node --import=tsx scripts/smoke-native.ts",
+    "mail:check": "node --env-file-if-exists=.env --import=tsx scripts/check-mail.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",
