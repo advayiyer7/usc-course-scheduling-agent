@@ -8,6 +8,11 @@ import {
   type FailureCode,
 } from "../../../../packages/contracts/src/coursebin.js";
 import { allowedPage, assertSemester, findAdd, readBin } from "./dom.js";
+import {
+  CHECKOUT_CHANNEL,
+  checkoutContentRequest,
+} from "../../../../packages/contracts/src/checkout.js";
+import { readCheckout } from "../checkout/dom.js";
 
 const documentId = crypto.randomUUID();
 const initialUrl = location.href;
@@ -16,14 +21,18 @@ let left = false;
 addEventListener("pagehide", () => {
   left = true;
 });
-function guard(term: number) {
+function guard(term: number, checkout = false) {
   if (left || location.href !== initialUrl)
     throw new CoursebinError("STATE_CHANGED");
-  if (!allowedPage(location.href)) throw new CoursebinError("LOGIN_REQUIRED");
+  if (
+    !allowedPage(location.href) &&
+    !(checkout && location.href === `${WEBREG_ORIGIN}/Checkout`)
+  )
+    throw new CoursebinError("LOGIN_REQUIRED");
   assertSemester(document, term);
 }
-async function snapshot(term: number) {
-  guard(term);
+async function snapshot(term: number, checkout = false) {
+  guard(term, checkout);
   // This is the only authenticated fetch: fixed, read-only, same origin, never forwarded.
   const response = await fetch(`${WEBREG_ORIGIN}/CourseBin`, {
     credentials: "same-origin",
@@ -44,7 +53,7 @@ async function snapshot(term: number) {
     "text/html",
   );
   const bin = readBin(doc, term);
-  guard(term);
+  guard(term, checkout);
   return bin;
 }
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -143,9 +152,34 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
     typeof raw !== "object" ||
     raw === null ||
     !("channel" in raw) ||
-    raw.channel !== COURSEBIN_CHANNEL
+    ![COURSEBIN_CHANNEL, CHECKOUT_CHANNEL].includes(raw.channel as string)
   )
     return;
+  if (raw.channel === CHECKOUT_CHANNEL) {
+    const command = checkoutContentRequest.safeParse(raw);
+    if (!command.success) {
+      respond({ ok: false, code: "UI_CHANGED" });
+      return;
+    }
+    void (async () => {
+      try {
+        const term = command.data.term_code;
+        guard(term, true);
+        if (adding) throw new CoursebinError("BUSY");
+        if (location.href !== `${WEBREG_ORIGIN}/Checkout`)
+          throw new CoursebinError("UI_CHANGED");
+        const initial = readCheckout(document, term);
+        const bin = await snapshot(term, true);
+        const transaction = readCheckout(document, term);
+        if (JSON.stringify(initial) !== JSON.stringify(transaction))
+          throw new CoursebinError("STATE_CHANGED");
+        respond({ ok: true, document_id: documentId, transaction, bin });
+      } catch (e) {
+        respond({ ok: false, code: codeOf(e) });
+      }
+    })();
+    return true;
+  }
   const parsed = contentCommand.safeParse(raw);
   if (!parsed.success) {
     respond({ ok: false, code: "UI_CHANGED" });

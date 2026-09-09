@@ -11,6 +11,8 @@ Implemented September 9, 2026. The user selected a forwarding pilot without a do
 5. A check uses the existing shared USC refresh queue. It can use a recent cache under the existing five-minute freshness policy and displays the selected record's timestamp. Full, cancelled, unknown and timed-out checks remain separate. A two-minute timeout does not imply successful refresh. No seat is reserved.
 6. **Review with Codex** prepares a schema-checked prompt in chat; the student sends it using their own companion. No LLM runs for webhook processing or polling. Open WebReg, complete USC sign-in, select the saved semester, refresh the complete planner and use its reviewed **Add to coursebin** action. Review every pending change and submit checkout in WebReg.
 
+Extension 0.3.1 adds **Read pending checkout** in My planner: a [read-only view and plan comparison](checkout-review.md) on the active Checkout page. It does not submit registration.
+
 For a synthetic local test, stop the existing API cleanly first: PGlite permits one process per data directory. Start:
 
 ```sh

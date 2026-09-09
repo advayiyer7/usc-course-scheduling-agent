@@ -45,6 +45,20 @@ let active = false;
 let preparing = false;
 let cancelled = false;
 let generation = 0;
+/** Checkout inspection and coursebin mutation share one background budget. */
+export async function withWebregReview<T>(
+  review: () => Promise<T>,
+): Promise<T> {
+  if (active || preparing) throw new CoursebinError("BUSY");
+  preparing = true;
+  generation++;
+  prepared = undefined;
+  try {
+    return await review();
+  } finally {
+    preparing = false;
+  }
+}
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function lastReport() {
   const stored = journal.safeParse(

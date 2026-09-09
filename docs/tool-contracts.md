@@ -46,6 +46,8 @@ Weekly overlaps with missing actual dates produce an unknown `time_conflict`, ev
 
 ## Browser-only coursebin contract
 
+The separate [checkout review protocol](checkout-review.md), `usc-checkout-review-v1`, accepts only `review` (proposal/current context) from the side panel and `inspect` (term) in the top-frame content script. It returns a schema-checked `mode: read_only` transaction view with checked/expiry timestamps and findings. There is no checkout execute/submit command or authorization ticket. It is not a REST, MCP or native tool.
+
 `packages/contracts/src/coursebin.ts` defines strict extension messages: `prepare` accepts one proposal plus current planning constraints; `execute` accepts only the single-use review ticket; `cancel` and `status` contain no action payload. Only the actual extension side panel can send them. These messages are not REST, MCP or native-companion tools. No message accepts JavaScript, arbitrary URLs, selectors or endpoint names.
 
 Per-section reports carry `added`, `already_present`, `failed` or `unconfirmed`, with bounded failure codes and the proposal/semester/snapshot identity. Only selected-section outcomes may be sent to chat. Authenticated page state and unrelated bin entries stay in the browser. See [coursebin execution policy and integration](coursebin.md), including current required-component, freshness and live-verification gates.

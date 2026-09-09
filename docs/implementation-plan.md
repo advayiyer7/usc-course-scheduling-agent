@@ -38,6 +38,8 @@ Build a local companion using official Codex app-server, with student-managed Ch
 
 ## Remaining later decisions
 
+September 9 continuation: implement live receiving and the registration executor, stopping for missing user inputs. Completed the mail setup/configuration check and the [browser checkout review](checkout-review.md). The compiled parser has been checked read-only against current authenticated Fall 2026 markup. Live email setup needs the developer's Resend account/domain; the registration pilot needs the student's intended exact sections before preparing a concrete complete-transaction confirmation. Submission/result handling remains work to do, not a shipped capability.
+
 September 8–9 scope update: the user authorized a Schedule Helper forwarding pilot, saved watches, assistant prompting and authenticated endpoint investigation. They selected preparation without a domain/provider setup. See [pilot operation and acceptance evidence](opening-alert-pilot.md). Live infrastructure and checkout correctness remain separate dependencies; never infer them from a synthetic notification or an observed HTML form.
 
 - Deterministic top-k schedule generation after validation is trustworthy.

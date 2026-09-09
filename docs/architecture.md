@@ -112,6 +112,8 @@ Store student preferences locally in the extension initially. Public catalog acc
 
 ## Evidence and unresolved decisions
 
+September 9: the extension now includes a [read-only pending checkout review](checkout-review.md) using the student's normal browser session, isolated from MCP/REST and native inference. It shares the coursebin operation lock and preserves the existing mutation boundary. Enrollment submission and result reconciliation remain unfinished. The [live email setup](mail-setup.md) now supports a Resend-managed receiving subdomain and validates complete configuration before database startup; no public ingress or provider account was created.
+
 The [WebReg authentication feasibility investigation](webreg-auth-feasibility.md) records verified authenticated HTTP reads, the observed federated login/cookie flow and the remaining session-portability tests. This research does not implement hosted account access or registration and does not change the current browser-only credential boundary.
 
 The [Schedule Helper integration research](schedule-helper-integration.md) evaluates email alerts, mailbox/forwarding options and an assisted authentication-to-registration workflow. The [forwarding pilot](opening-alert-pilot.md) implements private local watches, signed isolated email ingress, durable processing, public-data checks and extension/assistant handoff. Live receiving infrastructure and a verified registration executor are not established by this pilot.

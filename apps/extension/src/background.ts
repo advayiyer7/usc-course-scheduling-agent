@@ -6,6 +6,7 @@ import {
 } from "../../../packages/contracts/src/companion.js";
 import { installCoursebinHandler } from "./coursebin/background.js";
 import { installAlertBadge } from "./alerts/background.js";
+import { installCheckoutReviewHandler } from "./checkout/background.js";
 import { z } from "zod";
 import {
   LEGACY_INVALID_PLANNER_MESSAGE,
@@ -15,6 +16,7 @@ import {
 const requestIdentity = z.object({ id: z.string().uuid() });
 
 installCoursebinHandler();
+installCheckoutReviewHandler();
 installAlertBadge();
 void chrome.storage.local.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" });
 

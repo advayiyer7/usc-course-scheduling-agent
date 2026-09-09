@@ -67,6 +67,8 @@ A reusable password or session credential cannot be recovered from a one-way has
 
 ### Checkout form observation — September 8–9, 2026
 
+September 9 follow-up: fresh navigation after a failed direct read reached **authenticated `/Terms`**. Selecting Fall 2026 restored `/Checkout`; the compiled [checkout review parser](checkout-review.md) recognized the live registration layout, including units and grade option. Thus the failed read did not establish authentication expiry. No hidden values or private transaction records were retained and no checkout was submitted.
+
 In a separate diagnostic browser, the student completed USC sign-in. A normal observed Fall 2026 term-selection link established semester context. An authenticated `GET /Checkout` returned the **Registration Confirmation** page. The original `#MainForm` uses `POST /CheckoutResponse` and contains `activeTerm`, `btnSubmit` and `__RequestVerificationToken`. The Submit control calls `procRegSubmt()`; the public `/dist/site.bundle.js` implementation opens the submitting modal and submits `#MainForm`. No field values, anti-forgery tokens or private course list were retained.
 
 The transaction's sections are rendered outside the form under a **REGISTER** heading, with section identity, units, registered state and grade option among the columns. A POST body alone therefore does not enumerate or limit all server-side pending changes. No DROP/grade-change scenario, submit response, partial failure, post-submit reconciliation or retry was tested. Authentication success and a located endpoint are not sufficient to claim a working executor.

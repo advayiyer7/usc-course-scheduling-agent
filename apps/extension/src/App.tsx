@@ -30,6 +30,7 @@ import type { CoursebinReport } from "../../../packages/contracts/src/coursebin.
 import { refreshExactSelection } from "./planner-refresh.js";
 import "./style.css";
 import { AlertsPanel } from "./alerts/AlertsPanel.js";
+import { CheckoutReview } from "./checkout/CheckoutReview.js";
 
 const API = "http://127.0.0.1:3000";
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -801,6 +802,16 @@ export function App() {
               </p>
             )}
             {coursebinReport && <CoursebinResult report={coursebinReport} />}
+            {plannerProposal && (
+              <CheckoutReview
+                draft={plannerProposal}
+                context={plannerContext}
+                disabled={
+                  busy || refreshing || coursebinBusy || coursebinRunning
+                }
+                onBusy={setCoursebinBusy}
+              />
+            )}
           </section>
           <fieldset
             className="planner-editor"
