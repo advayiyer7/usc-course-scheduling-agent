@@ -8,6 +8,7 @@ import type {
   SourceResponse,
 } from "../../contracts/src/index.js";
 import { randomUUID } from "node:crypto";
+import { migrateAlerts } from "./alerts.js";
 import {
   digest,
   normalize,
@@ -106,6 +107,7 @@ export async function migrate(db: Database) {
   await db.transaction(async (tx) => {
     for (const sql of migrations) await tx.query(sql);
   });
+  await migrateAlerts(db);
 }
 
 export class Store {

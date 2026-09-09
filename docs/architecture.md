@@ -19,16 +19,16 @@ flowchart TD
 
 ## Responsibilities
 
-| Component | Responsibility |
-|---|---|
-| USC source adapter | Fetch and parse public records; no student credentials or hidden endpoints |
-| Refresh worker | Enumerate term programs, fetch with bounded concurrency, retry transient errors, stage and publish snapshots |
-| Database | Preserve source records, normalized relationships, versions, freshness, and completeness |
-| Domain service | Search, batch course retrieval, section retrieval, deterministic validation |
-| MCP adapter | Expose bounded, structured tools to supported assistant hosts |
-| REST adapter | Expose equivalent functionality to the extension |
-| Assistant host | Interpret natural language, gather preferences, propose schedules, explain validated results |
-| Extension | Course selection, local preference storage, calendar rendering, connector setup guidance and export |
+| Component          | Responsibility                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| USC source adapter | Fetch and parse public records; no student credentials or hidden endpoints                                   |
+| Refresh worker     | Enumerate term programs, fetch with bounded concurrency, retry transient errors, stage and publish snapshots |
+| Database           | Preserve source records, normalized relationships, versions, freshness, and completeness                     |
+| Domain service     | Search, batch course retrieval, section retrieval, deterministic validation                                  |
+| MCP adapter        | Expose bounded, structured tools to supported assistant hosts                                                |
+| REST adapter       | Expose equivalent functionality to the extension                                                             |
+| Assistant host     | Interpret natural language, gather preferences, propose schedules, explain validated results                 |
+| Extension          | Course selection, local preference storage, calendar rendering, connector setup guidance and export          |
 
 ## Source verified on September 6, 2026
 
@@ -65,12 +65,12 @@ Store snapshots durably; retention and refresh frequency are separate decisions.
 
 Proposed starting targets, subject to permitted USC load and observed behavior:
 
-| Data | Registration period | Otherwise |
-|---|---|---|
-| Full term reconciliation | Daily | Weekly for upcoming/active terms |
-| Active section changes | Every few hours | Daily |
+| Data                         | Registration period                                                                         | Otherwise                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Full term reconciliation     | Daily                                                                                       | Weekly for upcoming/active terms          |
+| Active section changes       | Every few hours                                                                             | Daily                                     |
 | Actively requested seat data | Request a targeted refresh after a configurable short freshness window, initially 5 minutes | On demand within the same upstream budget |
-| Archived terms | Freeze a final snapshot | Manual or infrequent correction |
+| Archived terms               | Freeze a final snapshot                                                                     | Manual or infrequent correction           |
 
 These are local polling targets, not source freshness guarantees. The same endpoint may return several categories together; do not duplicate upstream requests for each field. Start with a small global request budget and at most 2 concurrent source requests, configurable after measurement and access-policy review. Never poll the entire catalog every five minutes merely because seats have a shorter target.
 
@@ -114,7 +114,7 @@ Store student preferences locally in the extension initially. Public catalog acc
 
 The [WebReg authentication feasibility investigation](webreg-auth-feasibility.md) records verified authenticated HTTP reads, the observed federated login/cookie flow and the remaining session-portability tests. This research does not implement hosted account access or registration and does not change the current browser-only credential boundary.
 
-The [Schedule Helper integration research](schedule-helper-integration.md) evaluates email alerts, mailbox/forwarding options and an assisted authentication-to-registration workflow. Its event receiver, watch records and registration executor are proposals, not deployed or implemented features.
+The [Schedule Helper integration research](schedule-helper-integration.md) evaluates email alerts, mailbox/forwarding options and an assisted authentication-to-registration workflow. The [forwarding pilot](opening-alert-pilot.md) implements private local watches, signed isolated email ingress, durable processing, public-data checks and extension/assistant handoff. Live receiving infrastructure and a verified registration executor are not established by this pilot.
 
 - [USC Fall 2026 catalog](https://classes.usc.edu/term/20263/catalogue/school)
 - [MCP remote server guidance](https://modelcontextprotocol.io/registry/remote-servers)

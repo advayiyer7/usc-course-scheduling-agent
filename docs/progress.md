@@ -1,5 +1,11 @@
 # Implementation evidence
 
+## Opening-alert receiver and private watches — September 9, 2026
+
+- Added local per-profile pairing, exact plan/section watches, invalidation, bounded inboxes and structured confirmation/recheck state. Private APIs require a separate bearer token; only its hash is stored. Revocation removes all associated data. The public MCP course tools remain unchanged.
+- Added an isolated Resend-compatible raw-signature receiver, durable deduplicated jobs, bounded inert HTML extraction, fixed-origin retrieval, Retry-After handling, expiring leases and retention. Provider keys remain server-side; raw email, Helper account links and USC credentials are not stored or passed to chat. A signed delivery still requires the student's confirmation of its original source and semester.
+- Backend milestone: TypeScript and 18 focused parser/service/transport tests passed. 100 duplicate deliveries produced one event and no refresh request; 20 confirmed openings shared one fixture upstream request. Source failures, stale records, changed plans, cross-profile access, signature/replay failures, response bounds and crashed workers are covered. No real email or enrollment was submitted. Extension UI integration follows this commit; [operation and remaining dependencies](opening-alert-pilot.md) document the complete pilot.
+
 ## Milestone 1: ingestion and persistence
 
 - TypeScript, npm, Zod input/source schemas, immutable snapshots, raw response provenance, aliases, sections, meetings and job queue.

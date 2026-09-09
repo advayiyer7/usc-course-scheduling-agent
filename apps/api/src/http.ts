@@ -8,10 +8,16 @@ import {
   type ToolName,
 } from "../../../packages/contracts/src/index.js";
 import { resolve } from "node:path";
+import { AlertService } from "../../../packages/domain/src/alerts.js";
+import { alertRoutes } from "./alerts.js";
 
 export function createApp(
   service: CourseService,
-  options: { requestsPerMinute?: number; origins?: string[] } = {},
+  options: {
+    requestsPerMinute?: number;
+    origins?: string[];
+    alerts?: AlertService;
+  } = {},
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -43,7 +49,7 @@ export function createApp(
     }
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "Content-Type, Accept, MCP-Protocol-Version, MCP-Session-Id",
+      "Content-Type, Accept, Authorization, MCP-Protocol-Version, MCP-Session-Id",
     );
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -73,6 +79,10 @@ export function createApp(
     next();
   });
   app.use(express.json({ limit: "64kb", strict: true }));
+  app.use(
+    "/api/alerts",
+    alertRoutes(options.alerts ?? new AlertService(service)),
+  );
   app.get("/health", (_req, res) =>
     res.json({
       status: "ok",

@@ -38,6 +38,8 @@ Build a local companion using official Codex app-server, with student-managed Ch
 
 ## Remaining later decisions
 
+September 8–9 scope update: the user authorized a Schedule Helper forwarding pilot, saved watches, assistant prompting and authenticated endpoint investigation. They selected preparation without a domain/provider setup. See [pilot operation and acceptance evidence](opening-alert-pilot.md). Live infrastructure and checkout correctness remain separate dependencies; never infer them from a synthetic notification or an observed HTML form.
+
 - Deterministic top-k schedule generation after validation is trustworthy.
 - Student-authorized account sync if needed, with a separate data-access design.
 - In-extension chat using provider APIs, including explicit key and billing design.

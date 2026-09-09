@@ -30,9 +30,11 @@
     "@modelcontextprotocol/sdk": "1.30.0",
     "@openai/codex": "0.153.4",
     "express": "5.2.1",
+    "linkedom": "0.18.13",
     "pg": "8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "svix": "2.3.0",
     "zod": "4.5.4"
   },
   "devDependencies": {
@@ -42,7 +44,6 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
-    "linkedom": "0.18.13",
     "prettier": "3.9.6",
     "tsx": "4.23.13",
     "typescript": "7.0.2",
